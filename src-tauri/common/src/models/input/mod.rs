@@ -1,4 +1,3 @@
-use async_graphql::{InputObject, SimpleObject};
 use entity::connection_config;
 use nanoid::nanoid;
 use serde::{Deserialize, Serialize};
@@ -45,12 +44,12 @@ impl CreateConnectionConfigInput {
     }
 }
 
-#[derive(SimpleObject)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct MutationResult {
     pub rows_affected: u64,
 }
 
-#[derive(InputObject, Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AbandedTableNameInput {
     pub table_name: String,
 }

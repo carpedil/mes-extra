@@ -7,7 +7,6 @@ edition = "2021"
 entity = {path ="../entity"}
 
 serde = { version = "1.0.204", features = ["derive"] }
-async-graphql = "7.0.6"
 chrono = "0.4.38"
 xlsxwriter = "0.6.1"
 nanoid = "0.4.0"
