@@ -53,16 +53,16 @@
 
 	const handleExport = async () => {
 		exportBreathingFlag.set(true);
-		let list: ExportSpecInput[] = [];
+		let dump_spec: ExportSpecInput[] = [];
 		for (const table of $table_list) {
 			let esi = new ExportSpecInput();
 			esi.set_table_name(table.table_name);
 			esi.set_headers(table.column_infos);
 			esi.set_query_sql('');
-			list.push(esi);
+			dump_spec.push(esi);
 		}
 		// let res = await exportAllTableData(list);
-		let res = (await invoke('dump_datasource_tables', { list })) as string;
+		let res = (await invoke('dump_datasource_tables', { dump_spec })) as string;
 		console.log('dump_datasource_tables:', res);
 		exportBreathingFlag.set(false);
 		if (!res) {
