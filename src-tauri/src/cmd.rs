@@ -39,8 +39,9 @@ pub async fn load_datasource_tables() -> Vec<TableColumnsInfo> {
     DatasourceCmd::load_datasource_tables().await.unwrap()
 }
 
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub async fn dump_datasource_tables(dump_spec: Vec<ExportSpecInput>) -> String {
+    dbg!(&dump_spec);
     DatasourceCmd::dump_datasource_tables(dump_spec)
         .await
         .unwrap()
