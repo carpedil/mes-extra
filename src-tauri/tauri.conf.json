@@ -55,10 +55,10 @@
 		"windows": [
 			{
 				"fullscreen": false,
-				"height": 600,
+				"height": 897,
 				"resizable": true,
 				"title": "mes-extra",
-				"width": 800
+				"width": 1560
 			}
 		]
 	}

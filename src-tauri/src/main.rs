@@ -4,6 +4,7 @@ use cmd::*;
 use cmds::sea_orm;
 use common::constants::DATABASE_URL;
 use migration::MigratorTrait;
+use tauri::Manager;
 mod cmd;
 
 #[tokio::main]
@@ -15,6 +16,11 @@ async fn main() {
         .await
         .expect("Migrations failed");
     tauri::Builder::default()
+        .setup(|app|{
+            let main_window = app.get_window("main").unwrap();
+            main_window.maximize()?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             new_config,
             get_all_configs,
