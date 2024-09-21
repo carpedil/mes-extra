@@ -9,6 +9,12 @@ export const fetch_table_list = async () => {
 	const res = (await invoke('load_datasource_tables')) as TableColumnsInfo[];
 	console.log('load_datasource_tables:', res);
 	table_list.set(res);
+
+	const res2 = (await invoke('get_table_infos',{
+		sync_no:'2024-09-21',
+		sync_version:2
+	})) as TableColumnsInfo[];
+	console.log('get_table_infos:', res2);
 };
 
 export const set_table_selected = (table: ExportSpecInput) => {
