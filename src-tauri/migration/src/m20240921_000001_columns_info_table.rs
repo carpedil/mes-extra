@@ -1,5 +1,7 @@
 use sea_orm_migration::prelude::*;
 
+use super::m20240921_000001_sync_tables_table::SyncTables;
+
 #[derive(DeriveMigrationName)]
 pub struct Migration;
 
@@ -13,7 +15,7 @@ impl MigrationTrait for Migration {
                     .if_not_exists()
                     .col(
                         ColumnDef::new(SyncTableColumnsInfo::Id)
-                            .integer()
+                            .string_len(10)
                             .not_null()
                             .primary_key(),
                     )
@@ -39,7 +41,18 @@ impl MigrationTrait for Migration {
                             .string_len(10)
                             .default("ASC"),
                     )
+                    .col(
+                        ColumnDef::new(SyncTableColumnsInfo::RefIdx)
+                            .string_len(10)
+                            .not_null(),
+                    )
                     .col(ColumnDef::new(SyncTableColumnsInfo::CreatedAt).timestamp())
+                    .foreign_key(
+                        ForeignKey::create()
+                            .name("fk-columns-idx")
+                            .from(SyncTableColumnsInfo::Table, SyncTableColumnsInfo::RefIdx)
+                            .to(SyncTables::Table, SyncTables::Id),
+                    )
                     .to_owned(),
             )
             .await
@@ -62,5 +75,6 @@ pub enum SyncTableColumnsInfo {
     DataLen,
     IsExportable,
     SortType,
+    RefIdx,
     CreatedAt,
 }

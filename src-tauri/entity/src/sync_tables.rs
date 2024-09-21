@@ -7,24 +7,17 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "sync_tables")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub id: i32,
+    pub id: String,
     pub sync_no: String,
-    pub sync_version: String,
+    pub sync_version: i32,
     pub table_name: String,
     pub is_exportable: Option<bool>,
-    pub fk_columns_id: Option<i32>,
     pub created_at: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-        belongs_to = "super::sync_table_columns_info::Entity",
-        from = "Column::FkColumnsId",
-        to = "super::sync_table_columns_info::Column::Id",
-        on_update = "NoAction",
-        on_delete = "NoAction"
-    )]
+    #[sea_orm(has_many = "crate::sync_table_columns_info::Entity")]
     SyncTableColumnsInfo,
 }
 
