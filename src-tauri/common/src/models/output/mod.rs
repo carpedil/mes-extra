@@ -25,14 +25,16 @@ impl TableColumnsInfo {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ColumnData {
+    pub table_name: String,
     pub column_name: String,
     pub data_type: String,
     pub data_len: i32,
 }
 
 impl ColumnData {
-    pub fn new(column_name: String, data_type: String, data_len: i32) -> Self {
+    pub fn new(table_name: String, column_name: String, data_type: String, data_len: i32) -> Self {
         Self {
+            table_name,
             column_name,
             data_type,
             data_len,
