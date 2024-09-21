@@ -55,7 +55,7 @@
 			return;
 		}
 		newConfigFlag.set(false);
-		let tcc = {
+		let config = {
 			db_type: $formData.dbType,
 			env: $formData.env,
 			database_url: $formData.url,
@@ -63,7 +63,7 @@
 			password: $formData.password,
 			is_active: false
 		};
-		let res = (await invoke('new_config', { tcc })) as ConnectionConfig;
+		let res = (await invoke('new_config', { config })) as ConnectionConfig;
 		console.log('tcc', res);
 		if (!res) {
 			toast.error('Data Fetching Failed', {
@@ -73,7 +73,7 @@
 			return;
 		} else {
 			toast.success('success', {
-				description: `Data Fetching Success, ${tcc}`,
+				description: `Data Fetching Success, ${config}`,
 				position: 'top-right'
 			});
 		}
@@ -120,7 +120,7 @@
 								</Select.Trigger>
 								<Select.Content>
 									{#each envs as value}
-										<Select.Item {value} label={value} />
+										<Select.Item {value} label={value} class="bg-white"/>
 									{/each}
 								</Select.Content>
 							</Select.Root>
@@ -128,7 +128,7 @@
 					</Form.Field>
 					<Form.Field {form} name="dbType">
 						<Form.Control let:attrs>
-							<Form.Label>dbType</Form.Label>
+							<Form.Label class="mt-2">dbType</Form.Label>
 							<Select.Root
 								selected={selectedDbType}
 								onSelectedChange={(s) => {
@@ -141,7 +141,7 @@
 								<Select.Content>
 									{#each dbTypes as value}
 										<!-- disabled={value !== "Oracle" ? true:false} -->
-										<Select.Item {value} label={value} />
+										<Select.Item {value} label={value}  class="bg-white"/>
 									{/each}
 								</Select.Content>
 							</Select.Root>

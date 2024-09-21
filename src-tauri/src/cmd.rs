@@ -9,9 +9,9 @@ use common::{
 };
 
 #[tauri::command]
-pub async fn new_config(tcc: CreateConnectionConfigInput) -> connection_config::Model {
-    dbg!(&tcc);
-    let data = ConnectionConfigCmd::new_config(tcc.into_model_with_arbitrary_id()).await;
+pub async fn new_config(config: CreateConnectionConfigInput) -> connection_config::Model {
+    dbg!(&config);
+    let data = ConnectionConfigCmd::new_config(config.into_model_with_arbitrary_id()).await;
     data.unwrap()
 }
 

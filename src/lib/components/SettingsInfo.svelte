@@ -5,7 +5,7 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index';
 	import { Trash2, BugPlay } from 'lucide-svelte';
 	import { onMount } from 'svelte';
-	import { fetch_configs_list, tcc_list } from '$lib/stores/configs';
+	import { fetch_configs_list, config_list } from '$lib/stores/configs';
 	import { toast } from 'svelte-sonner';
 	import { invoke } from '@tauri-apps/api';
 	import type { ConnectionConfig } from '$lib/schema';
@@ -50,21 +50,21 @@
 	};
 </script>
 
-{#each $tcc_list as data}
+{#each $config_list as config}
 	<Card.Root
-		class="h-[210px] w-[300px] p-0 text-sm {data.is_active ? 'border-2 border-green-500' : ''}"
+		class="h-[210px] w-[300px] p-0 text-sm {config.is_active ? 'border-2 border-green-500' : ''}"
 	>
 		<Card.Header class="flex flex-row items-center justify-between">
 			<div class="flex flex-col gap-1">
-				<Card.Title>{data.env}</Card.Title>
-				<Card.Description>{data.id}</Card.Description>
+				<Card.Title>{config.env}</Card.Title>
+				<Card.Description>{config.id}</Card.Description>
 			</div>
 			<div class="flex">
-				{#if !data.is_active}
+				{#if !config.is_active}
 					<AlertDialog.Root>
 						<AlertDialog.Trigger asChild let:builder>
 							<Button variant="outline" size="icon" builders={[builder]}>
-								<BugPlay id={data.id} color="green" /></Button
+								<BugPlay id={config.id} color="green" /></Button
 							>
 						</AlertDialog.Trigger>
 						<AlertDialog.Content>
@@ -78,15 +78,15 @@
 							<AlertDialog.Footer>
 								<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
 								<AlertDialog.Action>
-									<Button id={data.id} on:click={handleActive} class="w-full">Continue</Button>
+									<Button id={config.id} on:click={handleActive} class="w-full">Continue</Button>
 								</AlertDialog.Action>
 							</AlertDialog.Footer>
 						</AlertDialog.Content>
 					</AlertDialog.Root>
 					<AlertDialog.Root>
 						<AlertDialog.Trigger asChild let:builder>
-							<Button variant="outline" size="icon" id={data.id} builders={[builder]}>
-								<Trash2 id={data.id} color="gray" /></Button
+							<Button variant="outline" size="icon" id={config.id} builders={[builder]}>
+								<Trash2 id={config.id} color="gray" /></Button
 							>
 						</AlertDialog.Trigger>
 						<AlertDialog.Content>
@@ -99,7 +99,7 @@
 							<AlertDialog.Footer>
 								<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
 								<AlertDialog.Action>
-									<Button id={data.id} on:click={handleDelete} class="w-full">Continue</Button>
+									<Button id={config.id} on:click={handleDelete} class="w-full">Continue</Button>
 								</AlertDialog.Action>
 							</AlertDialog.Footer>
 						</AlertDialog.Content>
@@ -110,9 +110,9 @@
 		<Card.Content>
 			<Accordion.Root>
 				<Accordion.Item value="content">
-					<Accordion.Trigger><span class="text-gray-400">{data.url}</span></Accordion.Trigger>
+					<Accordion.Trigger><span class="text-gray-400">{config.url}</span></Accordion.Trigger>
 					<Accordion.Content>
-						{data.username}/{data.password}
+						{config.username}/{config.password}
 					</Accordion.Content>
 				</Accordion.Item>
 			</Accordion.Root>
