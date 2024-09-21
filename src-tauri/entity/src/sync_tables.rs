@@ -12,7 +12,7 @@ pub struct Model {
     pub sync_version: i32,
     pub table_name: String,
     pub table_desc: Option<String>,
-    pub is_exportable: Option<bool>,
+    pub is_exportable: bool,
     pub created_at: Option<String>,
 }
 

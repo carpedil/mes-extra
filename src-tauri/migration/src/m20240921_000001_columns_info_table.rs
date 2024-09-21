@@ -30,17 +30,27 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     .col(ColumnDef::new(SyncTableColumnsInfo::ColumnDesc).string_len(90))
-                    .col(ColumnDef::new(SyncTableColumnsInfo::DataType).string_len(30))
-                    .col(ColumnDef::new(SyncTableColumnsInfo::DataLen).integer())
+                    .col(
+                        ColumnDef::new(SyncTableColumnsInfo::DataType)
+                            .string_len(30)
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(SyncTableColumnsInfo::DataLen)
+                            .integer()
+                            .not_null(),
+                    )
                     .col(
                         ColumnDef::new(SyncTableColumnsInfo::IsExportable)
                             .boolean()
-                            .default(true),
+                            .default(true)
+                            .not_null(),
                     )
                     .col(
                         ColumnDef::new(SyncTableColumnsInfo::SortType)
                             .string_len(10)
-                            .default("ASC"),
+                            .default("ASC")
+                            .not_null(),
                     )
                     .col(
                         ColumnDef::new(SyncTableColumnsInfo::RefIdx)

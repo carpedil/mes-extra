@@ -28,7 +28,8 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(SyncTables::IsExportable)
                             .boolean()
-                            .default(true),
+                            .default(true)
+                            .not_null(),
                     )
                     .col(ColumnDef::new(SyncTables::CreatedAt).timestamp())
                     .to_owned(),
