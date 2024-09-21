@@ -16,7 +16,7 @@ async fn main() {
         .await
         .expect("Migrations failed");
     tauri::Builder::default()
-        .setup(|app|{
+        .setup(|app| {
             let main_window = app.get_window("main").unwrap();
             main_window.maximize()?;
             Ok(())
