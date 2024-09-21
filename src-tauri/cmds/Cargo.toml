@@ -10,6 +10,8 @@ common = {path ="../common"}
 serde = { version = "1.0.204", features = ["derive"] }
 oracle = "0.6.2"
 xlsxwriter = "0.6.1"
+chrono = "0.4.38"
+tokio = {version="1.40.0", features=['macros']}
 
 
 
