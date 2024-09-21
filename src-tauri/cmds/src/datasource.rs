@@ -29,7 +29,7 @@ impl DatasourceCmd {
     }
 
     pub async fn load_datasource_tables() -> Result<Vec<TableColumnsInfo>, DbErr> {
-        let mut table_columns: HashMap<String, Vec<ColumnData>> = HashMap::new();
+        let mut table_columns: HashMap<(String, String), Vec<ColumnData>> = HashMap::new();
         if let Some(connection_config) = ConnectionConfigCmd::get_actived_config().await {
             println!(
                 "active_tcc: {}, banned_table_list: {:#?}",
@@ -43,13 +43,18 @@ impl DatasourceCmd {
             let mut row_list: Vec<DbTableStruct> = vec![];
             for row in row.unwrap().into_iter() {
                 let row = row.unwrap();
+                // dbg!(&row);
                 let table_name: String = row.get("TABLE_NAME").unwrap();
+                let table_desc: String = row.get("TAB_DESC").unwrap_or("".to_string());
                 let column_name: String = row.get("COLUMN_NAME").unwrap();
+                let column_desc: String = row.get("COL_DESC").unwrap_or("".to_string());
                 let data_type: String = row.get("DATA_TYPE").unwrap();
                 let data_len: i32 = row.get("DATA_LENGTH").unwrap();
                 let row_data = DbTableStruct {
                     table_name,
+                    table_desc,
                     column_name,
+                    column_desc,
                     data_type,
                     data_len,
                 };
@@ -57,11 +62,13 @@ impl DatasourceCmd {
             }
             for row in row_list {
                 table_columns
-                    .entry(row.table_name.clone())
+                    .entry((row.table_name.clone(), row.table_desc.clone()))
                     .or_insert(Vec::new())
                     .push(ColumnData {
                         table_name: row.table_name,
+                        table_desc: row.table_desc,
                         column_name: row.column_name,
+                        column_desc: row.column_desc,
                         data_type: row.data_type,
                         data_len: row.data_len,
                     });
@@ -69,10 +76,13 @@ impl DatasourceCmd {
 
             let mut ptable_list: Vec<TableColumnsInfo> = table_columns
                 .into_iter()
-                .map(|(table_name, column_infos)| TableColumnsInfo {
-                    table_name,
-                    column_infos,
-                })
+                .map(
+                    |((table_name, table_desc), column_infos)| TableColumnsInfo {
+                        table_name,
+                        table_desc,
+                        column_infos,
+                    },
+                )
                 .collect();
             ptable_list.sort_by(|a, b| a.table_name.cmp(&b.table_name));
             return Ok(ptable_list);
@@ -227,7 +237,7 @@ impl DatasourceCmd {
                 .query(&input.query_sql, &[])
                 .map_err(|e| DbErr::Custom(e.to_string()))?;
 
-            let _pt = TableColumnsInfo::new(&input.table_name, vec![]);
+            let _pt = TableColumnsInfo::new(&input.table_name, "".into(), vec![]);
             let mut data_list: Vec<TableRawData> = vec![];
             for (_, row) in rows.enumerate() {
                 match row {

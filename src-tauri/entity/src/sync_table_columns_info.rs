@@ -10,6 +10,7 @@ pub struct Model {
     pub id: String,
     pub table_name: String,
     pub column_name: String,
+    pub column_desc: Option<String>,
     pub data_type: Option<String>,
     pub data_len: Option<i32>,
     pub is_exportable: Option<bool>,

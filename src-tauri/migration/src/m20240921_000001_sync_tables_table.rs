@@ -24,6 +24,7 @@ impl MigrationTrait for Migration {
                             .string_len(30)
                             .not_null(),
                     )
+                    .col(ColumnDef::new(SyncTables::TableDesc).string_len(90))
                     .col(
                         ColumnDef::new(SyncTables::IsExportable)
                             .boolean()
@@ -49,6 +50,7 @@ pub enum SyncTables {
     SyncNo,
     SyncVersion,
     TableName,
+    TableDesc,
     IsExportable,
     CreatedAt,
 }

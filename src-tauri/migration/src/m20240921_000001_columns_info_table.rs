@@ -29,6 +29,7 @@ impl MigrationTrait for Migration {
                             .string_len(30)
                             .not_null(),
                     )
+                    .col(ColumnDef::new(SyncTableColumnsInfo::ColumnDesc).string_len(90))
                     .col(ColumnDef::new(SyncTableColumnsInfo::DataType).string_len(30))
                     .col(ColumnDef::new(SyncTableColumnsInfo::DataLen).integer())
                     .col(
@@ -71,6 +72,7 @@ pub enum SyncTableColumnsInfo {
     Id,
     TableName,
     ColumnName,
+    ColumnDesc,
     DataType,
     DataLen,
     IsExportable,

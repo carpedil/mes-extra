@@ -28,7 +28,7 @@ impl SyncTableCmd {
     }
 
     pub async fn sync_table_infos() -> Result<String, DbErr> {
-        let mut table_columns: HashMap<String, Vec<ColumnData>> = HashMap::new();
+        let mut table_columns: HashMap<(String, String), Vec<ColumnData>> = HashMap::new();
         if let Some(cc) = ConnectionConfigCmd::get_actived_config().await {
             let dq = DatasourceCmd::new(cc.clone());
             let data = dq
@@ -39,12 +39,16 @@ impl SyncTableCmd {
             for row in data.into_iter() {
                 let row = row.unwrap();
                 let table_name: String = row.get("TABLE_NAME").unwrap();
+                let table_desc: String = row.get("TAB_DESC").unwrap_or("".to_string());
                 let column_name: String = row.get("COLUMN_NAME").unwrap();
+                let column_desc: String = row.get("COL_DESC").unwrap_or("".to_string());
                 let data_type: String = row.get("DATA_TYPE").unwrap();
                 let data_len: i32 = row.get("DATA_LENGTH").unwrap();
                 let row_data = DbTableStruct {
                     table_name,
+                    table_desc,
                     column_name,
+                    column_desc,
                     data_type,
                     data_len,
                 };
@@ -52,33 +56,39 @@ impl SyncTableCmd {
             }
             for row in row_list {
                 table_columns
-                    .entry(row.table_name.clone())
+                    .entry((row.table_name.clone(), row.table_desc.clone()))
                     .or_insert(Vec::new())
                     .push(ColumnData {
                         table_name: row.table_name,
+                        table_desc: row.table_desc,
                         column_name: row.column_name,
+                        column_desc: row.column_desc,
                         data_type: row.data_type,
                         data_len: row.data_len,
                     });
             }
             let mut ptable_list: Vec<TableColumnsInfo> = table_columns
                 .into_iter()
-                .map(|(table_name, column_infos)| TableColumnsInfo {
-                    table_name,
-                    column_infos,
-                })
+                .map(
+                    |((table_name, table_desc), column_infos)| TableColumnsInfo {
+                        table_name,
+                        table_desc,
+                        column_infos,
+                    },
+                )
                 .collect();
             ptable_list.sort_by(|a, b| a.table_name.cmp(&b.table_name));
             let db = SyncTableCmd::get_db_conn().await;
             for table in ptable_list.iter() {
                 let uid = gen_uid();
-                let latest_version = get_latest_version(table.table_name.clone()).await;
+                let latest_version = latest_version(table.table_name.clone()).await;
                 let sync_no = gen_sync_no();
                 let table_insert = sync_tables::ActiveModel {
                     id: Set(uid.clone()),
                     sync_no: Set(sync_no.clone()),
                     sync_version: Set(latest_version.clone()),
                     table_name: Set(table.table_name.clone()),
+                    table_desc: Set(Some(table.table_desc.clone())),
                     created_at: Set(Some(chrono::Local::now().to_string())),
                     ..Default::default()
                 };
@@ -92,6 +102,7 @@ impl SyncTableCmd {
                         id: Set(gen_uid()),
                         table_name: Set(table.table_name.clone()),
                         column_name: Set(columns_info.column_name.clone()),
+                        column_desc: Set(Some(columns_info.column_desc.clone())),
                         data_type: Set(Some(columns_info.data_type.clone())),
                         data_len: Set(Some(columns_info.data_len)),
                         ref_idx: Set(uid.clone()),
@@ -117,7 +128,9 @@ impl SyncTableCmd {
     }
 }
 
-async fn get_latest_version(table_name: String) -> i32 {
+type LatestVersion = i32;
+
+async fn latest_version(table_name: String) -> LatestVersion {
     let db = SyncTableCmd::get_db_conn().await;
     let res = sync_tables::Entity::find()
         .filter(sync_tables::Column::TableName.eq(table_name))
