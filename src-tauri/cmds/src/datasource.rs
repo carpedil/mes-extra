@@ -13,12 +13,12 @@ use sea_orm::DbErr;
 use crate::ConnectionConfigCmd;
 
 pub struct DatasourceCmd {
-    conn: Connection,
+    pub conn: Connection,
 }
 
 #[allow(dead_code)]
 impl DatasourceCmd {
-    fn new(connection_config: connection_config::Model) -> Self {
+    pub fn new(connection_config: connection_config::Model) -> Self {
         let conn = Connection::connect(
             connection_config.username,
             connection_config.password,
@@ -57,9 +57,10 @@ impl DatasourceCmd {
             }
             for row in row_list {
                 table_columns
-                    .entry(row.table_name)
+                    .entry(row.table_name.clone())
                     .or_insert(Vec::new())
                     .push(ColumnData {
+                        table_name: row.table_name,
                         column_name: row.column_name,
                         data_type: row.data_type,
                         data_len: row.data_len,
