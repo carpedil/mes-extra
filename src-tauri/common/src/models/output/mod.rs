@@ -68,3 +68,28 @@ impl TableRawData {
         Self { data }
     }
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AppResult<T> {
+    pub code: i32,
+    pub message: String,
+    pub error: AppErr,
+    pub data: T,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum AppErr {
+    None,
+    DbErr(String),
+    CustomErr(String),
+}
+
+impl AppErr {
+    pub fn to_string(&self) -> String {
+        match self {
+            AppErr::None => "".to_string(),
+            AppErr::DbErr(msg) => format!("DbErr:{}", msg),
+            AppErr::CustomErr(msg) => format!("CustomErr:{}", msg),
+        }
+    }
+}

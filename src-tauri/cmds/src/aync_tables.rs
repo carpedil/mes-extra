@@ -2,11 +2,11 @@ use std::collections::HashMap;
 
 use common::{
     constants::DATABASE_URL,
-    output::{ColumnData, DbTableStruct, TableColumnsInfo},
+    output::{AppErr, AppResult, ColumnData, DbTableStruct, TableColumnsInfo},
     utils::{gen_uid, get_user_tab_columns_sql},
 };
 use entity::{
-    sync_table_columns_info::{self},
+    sync_table_columns_info::{self, Entity as SyncTableColumnsInfo},
     sync_tables::{self},
 };
 use sea_orm::{ColumnTrait, DbConn, DbErr, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
@@ -103,8 +103,8 @@ impl SyncTableCmd {
                         table_name: Set(table.table_name.clone()),
                         column_name: Set(columns_info.column_name.clone()),
                         column_desc: Set(Some(columns_info.column_desc.clone())),
-                        data_type: Set(Some(columns_info.data_type.clone())),
-                        data_len: Set(Some(columns_info.data_len)),
+                        data_type: Set(columns_info.data_type.clone()),
+                        data_len: Set(columns_info.data_len),
                         ref_idx: Set(uid.clone()),
                         created_at: Set(Some(chrono::Local::now().to_string())),
                         ..Default::default()
@@ -125,6 +125,61 @@ impl SyncTableCmd {
         Err(sea_orm::DbErr::Custom(
             "no actived connection_config to use".into(),
         ))
+    }
+
+    pub async fn get_table_infos(
+        sync_no: String,
+        sync_version: i32,
+    ) -> AppResult<Vec<TableColumnsInfo>> {
+        let db = SyncTableCmd::get_db_conn().await;
+
+        let data = sync_tables::Entity::find()
+            .filter(sync_tables::Column::SyncNo.eq(sync_no))
+            .filter(sync_tables::Column::SyncVersion.eq(sync_version))
+            .find_also_related(SyncTableColumnsInfo)
+            .all(&db)
+            .await
+            .unwrap();
+        // 将data转换为
+        let mut table_columns: HashMap<(String, String), Vec<ColumnData>> = HashMap::new();
+        for row in data.iter() {
+            let table = row.0.clone();
+            let columns = row.1.clone().unwrap();
+            let table_name: String = table.table_name.clone();
+            let table_desc: String = table.table_desc.unwrap().clone();
+            let column_name: String = columns.column_name.clone();
+            let column_desc: String = columns.column_desc.clone().unwrap_or_default();
+            let data_type: String = columns.data_type.clone();
+            let data_len: i32 = columns.data_len.clone();
+
+            table_columns
+                .entry((table_name.clone(), table_desc.clone()))
+                .or_insert(Vec::new())
+                .push(ColumnData {
+                    table_name,
+                    table_desc,
+                    column_name,
+                    column_desc,
+                    data_type,
+                    data_len,
+                });
+        }
+        let table_columns_info: Vec<TableColumnsInfo> = table_columns
+            .into_iter()
+            .map(
+                |((table_name, table_desc), column_infos)| TableColumnsInfo {
+                    table_name,
+                    table_desc,
+                    column_infos,
+                },
+            )
+            .collect();
+        AppResult {
+            code: 200,
+            message: "success".to_string(),
+            error: AppErr::None,
+            data: table_columns_info,
+        }
     }
 }
 

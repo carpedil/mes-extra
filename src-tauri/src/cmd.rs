@@ -1,7 +1,8 @@
+use common::output::AppResult;
 use entity::connection_config;
 
-use cmds::configs::ConnectionConfigCmd;
 use cmds::datasource::DatasourceCmd;
+use cmds::{aync_tables::SyncTableCmd, configs::ConnectionConfigCmd};
 use common::{
     input::ExportSpecInput,
     models::input::CreateConnectionConfigInput,
@@ -50,4 +51,12 @@ pub async fn dump_datasource_tables(dump_spec: Vec<ExportSpecInput>) -> String {
 #[tauri::command]
 pub async fn get_table_data(input: ExportSpecInput) -> Vec<TableRawData> {
     DatasourceCmd::get_table_data(input).await.unwrap()
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn get_table_infos(
+    sync_no: String,
+    sync_version: i32,
+) -> AppResult<Vec<TableColumnsInfo>> {
+    SyncTableCmd::get_table_infos(sync_no, sync_version).await
 }
