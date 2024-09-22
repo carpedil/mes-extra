@@ -94,11 +94,13 @@
 {#if $newConfigFlag}
 	<div class="flex">
 		<ScrollArea
-			class="h-full {$isOracle ? 'flex-1' : 'w-[50%]'} rounded-md pt-1"
+			class="h-full {$isOracle ? 'flex-1' : 'w-[50%]'} rounded-md pt-1 "
 			orientation="vertical"
 		>
-			<Card.Root>
-				<Card.Header class="flex flex-row items-center justify-between">
+			<Card.Root class="border-gray-200 dark:border-slate-400">
+				<Card.Header
+					class="flex flex-row items-center justify-between border border-gray-200 dark:border-slate-400"
+				>
 					<div>
 						<Card.Title>Create Configs</Card.Title>
 						<Card.Description>information about your database connection</Card.Description>
@@ -120,7 +122,7 @@
 								</Select.Trigger>
 								<Select.Content>
 									{#each envs as value}
-										<Select.Item {value} label={value} class="bg-white"/>
+										<Select.Item {value} label={value} class="bg-white" />
 									{/each}
 								</Select.Content>
 							</Select.Root>
@@ -141,7 +143,7 @@
 								<Select.Content>
 									{#each dbTypes as value}
 										<!-- disabled={value !== "Oracle" ? true:false} -->
-										<Select.Item {value} label={value}  class="bg-white"/>
+										<Select.Item {value} label={value} class="bg-white" />
 									{/each}
 								</Select.Content>
 							</Select.Root>

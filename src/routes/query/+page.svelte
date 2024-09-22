@@ -84,14 +84,15 @@
 	<Resizable.PaneGroup direction="vertical" class="min-h-[100vh]  max-w-[100vw] rounded-lg border ">
 		<Resizable.Pane defaultSize={100}>
 			<Resizable.PaneGroup direction="horizontal" class="min-h-[90vh] max-w-[100vw] rounded-lg">
-				<Resizable.Pane defaultSize={20}>
-					<Tabs.Root value="tables" class="h-fit ">
+				<Resizable.Pane defaultSize={20} class="border-r-2 border-gray-500 dark:border-slate-300">
+					<Tabs.Root value="tables" class="h-fit">
 						<Tabs.List class="flex w-full text-xs">
 							<Tabs.Trigger value="tables" class="flex-1 text-xs">
 								<ListChecks />Tables
 							</Tabs.Trigger>
 							<Tabs.Trigger value="mutedTables" class="flex-1 text-xs"><Ban />Banned</Tabs.Trigger>
 						</Tabs.List>
+						<div class="border w-full p-1">sync no | sync version</div>
 						<Tabs.Content value="tables" class="p-1">
 							<ContextMenu.Root>
 								<ContextMenu.Trigger>

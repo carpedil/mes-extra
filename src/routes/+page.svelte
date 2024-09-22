@@ -8,15 +8,20 @@
 </script>
 
 <div class="w-[90vw]">
-	<Card.Root class="h-full w-full">
+	<Card.Root class="h-full w-full border-gray-200 dark:border-slate-400">
 		<Card.Header>
-			<Card.Title class="flex items-center justify-between rounded-sm border pl-1">
+			<Card.Title
+				class="flex items-center justify-between border-gray-200 dark:border-slate-400 rounded-sm  pl-1"
+			>
 				<span>Connection Configs</span>
 				<Button variant="outline" on:click={() => newConfigFlag.set(true)}>NEW</Button>
 			</Card.Title>
 		</Card.Header>
 		<Card.Content>
-			<ScrollArea class="flex h-[250px]  w-[82vw] rounded-md border p-4 " orientation="horizontal">
+			<ScrollArea
+				class="flex h-[250px]  w-[82vw] rounded-md border border-gray-200 dark:border-slate-400 p-4 "
+				orientation="horizontal"
+			>
 				<div class="flex flex-row justify-start gap-4">
 					<SettingsInfo />
 				</div>

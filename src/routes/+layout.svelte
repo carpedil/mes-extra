@@ -13,7 +13,7 @@
 <AppToaster />
 
 <Resizable.PaneGroup direction="vertical" class="min-h-[100vh]  max-w-[100vw] rounded-lg ">
-	<Resizable.Pane defaultSize={5}>
+	<Resizable.Pane defaultSize={5} class=" border-b-2 border-gray-200 dark:border-slate-400">
 		<div class="flex h-full w-full items-center justify-between p-4">
 			<div class="flex w-full flex-row items-center p-1.5">
 				<Avatar.Root>
@@ -35,19 +35,18 @@
 	</Resizable.Pane>
 	<Resizable.Handle />
 	<Resizable.Pane defaultSize={95}>
-		<Resizable.PaneGroup
-			direction="horizontal"
-			class="min-h-[90vh] max-w-[100vw] rounded-lg border"
-		>
-			<Resizable.Pane defaultSize={15}>
-				<div class="flex h-full w-full items-start justify-center p-2">
+		<Resizable.PaneGroup direction="horizontal" class="min-h-[90vh] max-w-[98vw] rounded-lg ">
+			<Resizable.Pane defaultSize={10}>
+				<div
+					class="flex h-full w-full border-r-2 border-gray-200 dark:border-slate-400 items-start justify-center p-2"
+				>
 					<span class="font-semibold">
 						<MenuCommand />
 					</span>
 				</div>
 			</Resizable.Pane>
 			<Resizable.Handle withHandle />
-			<Resizable.Pane defaultSize={85}>
+			<Resizable.Pane defaultSize={90}>
 				<div class="flex h-full items-start justify-start p-2">
 					<slot />
 				</div>
