@@ -1,3 +1,4 @@
+use cmds::aync_tables::ExportRange;
 use common::output::AppResult;
 use entity::connection_config;
 
@@ -68,4 +69,9 @@ pub async fn get_table_data2(
     table_name: String,
 ) -> AppResult<Vec<TableRawData>> {
     SyncTableCmd::get_table_data(sync_no, sync_version, table_name).await
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn export_table_data(export_range: ExportRange) -> AppResult<String> {
+    SyncTableCmd::export_table_data(export_range).await
 }

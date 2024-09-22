@@ -1,7 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, env};
 
 use common::{
     constants::DATABASE_URL,
+    excel_helper::XlsxHelper,
+    input::{ColumnDataInput, ExportSpecInput},
     output::{AppErr, AppResult, ColumnData, DbTableStruct, TableColumnsInfo, TableRawData},
     utils::{gen_uid, get_user_tab_columns_sql},
 };
@@ -10,6 +12,7 @@ use entity::{
     sync_tables::{self},
 };
 use sea_orm::{ColumnTrait, DbConn, DbErr, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use serde::{Deserialize, Serialize};
 
 use crate::{ConnectionConfigCmd, DatasourceCmd};
 
@@ -233,6 +236,155 @@ impl SyncTableCmd {
             }
         }
     }
+
+    pub async fn export_table_data(export_range: ExportRange) -> AppResult<String> {
+        let db = SyncTableCmd::get_db_conn().await;
+        let table_info_list: Vec<(sync_tables::Model, Option<sync_table_columns_info::Model>)>;
+        match export_range.table_name {
+            Some(name) => {
+                table_info_list = sync_tables::Entity::find()
+                    .filter(sync_tables::Column::SyncNo.eq(export_range.sync_no.clone()))
+                    .filter(sync_tables::Column::SyncVersion.eq(export_range.sync_version.clone()))
+                    .filter(sync_tables::Column::TableName.eq(name))
+                    .find_also_related(SyncTableColumnsInfo)
+                    .all(&db)
+                    .await
+                    .unwrap();
+            }
+            None => {
+                table_info_list = sync_tables::Entity::find()
+                    .filter(sync_tables::Column::SyncNo.eq(export_range.sync_no.clone()))
+                    .filter(sync_tables::Column::SyncVersion.eq(export_range.sync_version.clone()))
+                    .filter(sync_tables::Column::IsExportable.eq(true))
+                    .find_also_related(SyncTableColumnsInfo)
+                    .all(&db)
+                    .await
+                    .unwrap();
+            }
+        }
+
+        println!("table_info_list len: {}", table_info_list.len());
+        let table_infos = convert_to_table_infos_list(table_info_list);
+        println!("table_infos len: {}", table_infos.len());
+
+        let export_jobs = table_infos
+            .iter()
+            .map(|table| {
+                let headers = table
+                    .column_infos
+                    .iter()
+                    .map(|column_info| ColumnDataInput {
+                        column_name: column_info.column_name.clone(),
+                        data_len: column_info.data_len.clone(),
+                        data_type: column_info.data_type.clone(),
+                    })
+                    .collect::<Vec<ColumnDataInput>>();
+
+                let query_sql = gen_query_script(table);
+
+                return ExportSpecInput {
+                    table_name: table.table_name.clone(),
+                    headers,
+                    query_sql,
+                };
+            })
+            .collect::<Vec<ExportSpecInput>>();
+
+        let cc = ConnectionConfigCmd::get_actived_config().await.unwrap();
+        let source_db = DatasourceCmd::new(cc);
+        let xls = XlsxHelper::new();
+
+        for job in export_jobs.iter() {
+            println!("table : {}", job.table_name);
+            let mut worksheet = xls
+                .wb
+                .add_worksheet(Some(&job.table_name.as_str()))
+                .unwrap();
+            for (col_num, column) in job.headers.iter().enumerate() {
+                let _ = worksheet.write_string(
+                    0,
+                    col_num as u16,
+                    &column.column_name,
+                    Some(&XlsxHelper::headers_format()),
+                );
+            }
+
+            let rows = source_db.conn.query(&job.query_sql, &[]).map_err(|err| {
+                eprintln!("err:{}, table_name :{}", err, job.table_name);
+            });
+
+            match rows {
+                Ok(rows) => {
+                    for (row_num, row) in rows.enumerate() {
+                        match row {
+                            Ok(r) => {
+                                for (col_num, column) in job.headers.iter().enumerate() {
+                                    if let Some(value) = r
+                                        .get::<&str, Option<String>>(&column.column_name)
+                                        .unwrap_or(None)
+                                    {
+                                        // println!("{}", value);
+                                        match column.data_type.as_str() {
+                                            "NUMBER" => {
+                                                worksheet
+                                                    .write_number(
+                                                        (row_num + 1) as u32,
+                                                        col_num as u16,
+                                                        value.parse::<f64>().unwrap(),
+                                                        Some(&XlsxHelper::format()),
+                                                    )
+                                                    .unwrap();
+                                            }
+                                            _ => {
+                                                worksheet
+                                                    .write_string(
+                                                        (row_num + 1) as u32,
+                                                        col_num as u16,
+                                                        &value.to_string(),
+                                                        Some(&XlsxHelper::format()),
+                                                    )
+                                                    .unwrap();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("Error fetching row: {:?}", e);
+                                break;
+                            }
+                        }
+                    }
+                    // 冻结首行
+                    worksheet.freeze_panes(1, 0);
+                }
+                Err(_) => continue,
+            }
+        }
+
+        // 关闭资源句柄
+        xls.wb.close().unwrap();
+        let current_dir = env::current_dir().expect("Failed to get current directory");
+        let file_path = current_dir
+            .join(xls.file_name)
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        AppResult {
+            code: 200,
+            message: "success".into(),
+            error: AppErr::None,
+            data: file_path,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ExportRange {
+    sync_no: String,
+    sync_version: i32,
+    table_name: Option<String>,
 }
 
 fn gen_query_script(table: &TableColumnsInfo) -> String {
@@ -309,7 +461,7 @@ fn gen_sync_no() -> String {
 #[cfg(test)]
 mod tests {
 
-    use crate::aync_tables::gen_sync_no;
+    use crate::aync_tables::{gen_sync_no, ExportRange};
 
     use super::SyncTableCmd;
     use entity::{sync_table_columns_info::Entity as SyncTableColumnsInfo, sync_tables};
@@ -350,5 +502,37 @@ mod tests {
         let data =
             SyncTableCmd::get_table_data("2024-09-21".to_string(), 1, "ALARMS".to_string()).await;
         dbg!(&data);
+    }
+
+    #[test]
+    async fn test_export_table_data1() {
+        let et = ExportRange {
+            sync_no: "2024-09-21".into(),
+            sync_version: 1,
+            table_name: None,
+        };
+        let start_time = chrono::Local::now();
+        let _ = SyncTableCmd::export_table_data(et).await;
+        let end_time = chrono::Local::now();
+        let duration = end_time - start_time;
+        let duration_minutes = duration.num_seconds();
+
+        println!("Time taken: {} minutes", duration_minutes);
+    }
+
+    #[test]
+    async fn test_export_table_data2() {
+        let et = ExportRange {
+            sync_no: "2024-09-21".into(),
+            sync_version: 1,
+            table_name: Some("ALARMS".into()),
+        };
+        let start_time = chrono::Local::now();
+        let _ = SyncTableCmd::export_table_data(et).await;
+        let end_time = chrono::Local::now();
+        let duration = end_time - start_time;
+        let duration_minutes = duration.num_seconds();
+
+        println!("Time taken: {} minutes", duration_minutes);
     }
 }

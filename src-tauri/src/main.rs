@@ -30,7 +30,8 @@ async fn main() {
             dump_datasource_tables,
             get_table_data,
             get_table_infos,
-            get_table_data2
+            get_table_data2,
+            export_table_data
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
