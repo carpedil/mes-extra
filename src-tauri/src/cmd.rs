@@ -60,3 +60,12 @@ pub async fn get_table_infos(
 ) -> AppResult<Vec<TableColumnsInfo>> {
     SyncTableCmd::get_table_infos(sync_no, sync_version).await
 }
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn get_table_data2(
+    sync_no: String,
+    sync_version: i32,
+    table_name: String,
+) -> AppResult<Vec<TableRawData>> {
+    SyncTableCmd::get_table_data(sync_no, sync_version, table_name).await
+}
