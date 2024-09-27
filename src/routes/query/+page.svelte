@@ -51,7 +51,7 @@
 		tableData = res;
 	};
 
-	const handleExport = async () => {
+	const handleAllTableExport = async () => {
 		exportBreathingFlag.set(true);
 		let dump_spec: ExportSpecInput[] = [];
 		for (const table of $table_list) {
@@ -62,6 +62,34 @@
 			dump_spec.push(esi);
 		}
 		// let res = await exportAllTableData(list);
+		let res = (await invoke('dump_datasource_tables', { dump_spec })) as string;
+		console.log('dump_datasource_tables:', res);
+		exportBreathingFlag.set(false);
+		if (!res) {
+			toast.error('Data Export Failed', {
+				description: 'Data Export Failed',
+				position: 'top-right'
+			});
+			return;
+		} else {
+			toast.success('success', {
+				description: `${JSON.stringify(res)}`,
+				position: 'top-right'
+			});
+		}
+	};
+
+	const handleCurrTableExport = async () => {
+		exportBreathingFlag.set(true);
+		let dump_spec: ExportSpecInput[] = [];
+		for (const table of $table_list) {
+			let esi = new ExportSpecInput();
+			esi.set_table_name(table.table_name);
+			esi.set_headers(table.column_infos);
+			esi.set_query_sql('');
+			dump_spec.push(esi);
+		}
+
 		let res = (await invoke('dump_datasource_tables', { dump_spec })) as string;
 		console.log('dump_datasource_tables:', res);
 		exportBreathingFlag.set(false);
@@ -123,8 +151,13 @@
 								</ContextMenu.Trigger>
 								<ContextMenu.Content>
 									<ContextMenu.Item>
-										<button class="h-fit w-full p-1 text-left" on:click={handleExport}
-											>Export to Excel</button
+										<button class="h-fit w-full p-1 text-left" on:click={handleAllTableExport}
+											>Export All Tables</button
+										>
+									</ContextMenu.Item>
+									<ContextMenu.Item>
+										<button class="h-fit w-full p-1 text-left" on:click={handleCurrTableExport}
+											>Export Current Table</button
 										>
 									</ContextMenu.Item>
 									{#if $table_selected.table_name !== ''}
