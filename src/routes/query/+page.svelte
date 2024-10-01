@@ -28,14 +28,20 @@
 		currTableName = e.target.innerHTML;
 		const tableInfo = $table_list.filter((item) => item.table_name === currTableName)[0];
 		let esi = new ExportSpecInput();
+		esi.set_sync_no(tableInfo.sync_no);
+		esi.set_sync_version(tableInfo.sync_version);
 		esi.set_table_name(tableInfo.table_name);
 		esi.set_headers(tableInfo.column_infos);
 		esi.set_query_sql('');
 		set_table_selected(esi);
-		// let res = await getCurrentTableData($table_selected);
 		const input = $table_selected;
-		let res = (await invoke('get_table_data', { input })) as TableData[];
-		tableData = res;
+		let res = (await invoke('get_table_data2', {
+			sync_no: input.sync_no,
+			sync_version: input.sync_version,
+			table_name: input.table_name
+		})) as any;
+		console.log('get_table_data2', res);
+		tableData = res.data;
 	};
 
 	const handleCopyToClipboard = async () => {
@@ -44,7 +50,6 @@
 
 	let tableData: TableData[] = [];
 	const handleDataQuery = async () => {
-		// let res = await getCurrentTableData($table_selected);
 		const input = $table_selected;
 		let res = (await invoke('get_table_data', { input })) as TableData[];
 		console.log('get_table_data:', res, input);
@@ -61,7 +66,6 @@
 			esi.set_query_sql('');
 			dump_spec.push(esi);
 		}
-		// let res = await exportAllTableData(list);
 		let res = (await invoke('dump_datasource_tables', { dump_spec })) as string;
 		console.log('dump_datasource_tables:', res);
 		exportBreathingFlag.set(false);

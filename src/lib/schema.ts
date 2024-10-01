@@ -39,8 +39,10 @@ export class ConnectionConfig {
 }
 
 export class TableColumnsInfo {
-	table_name: string = '';
-	column_infos: ColumnData[] = [];
+	public sync_no: string = '';
+	public sync_version: number = 0;
+	public table_name: string = '';
+	public column_infos: ColumnData[] = [];
 }
 
 export class ColumnData {
@@ -50,6 +52,8 @@ export class ColumnData {
 }
 
 export class ExportSpecInput {
+	public sync_no: string = '';
+	public sync_version: number = 0;
 	public table_name: string = '';
 	public headers: ColumnData[] = [];
 	public query_sql: string = '';
@@ -58,6 +62,14 @@ export class ExportSpecInput {
 		this.table_name = '';
 		this.headers = [];
 		this.query_sql = '';
+	}
+
+	set_sync_no(sync_no: string) {
+		this.sync_no = sync_no;
+	}
+
+	set_sync_version(sync_version: number) {
+		this.sync_version = sync_version;
 	}
 
 	set_table_name(table_name: string) {

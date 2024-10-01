@@ -206,7 +206,7 @@ impl SyncTableCmd {
                     };
                 }
                 let table_infos = convert_to_table_infos_list(data);
-                dbg!(&table_infos);
+                // dbg!(&table_infos);
                 let sql = gen_query_script(&table_infos[0]);
                 let headers = &table_infos[0]
                     .column_infos
@@ -436,7 +436,7 @@ fn convert_to_table_infos_list(
         let sync_no = table.sync_no.clone();
         let sync_version = table.sync_version.clone();
         let table_name: String = table.table_name.clone();
-        let table_desc: String = table.table_desc.unwrap().clone();
+        let table_desc: String = table.table_desc.clone().unwrap_or_default();
         let column_name: String = columns.column_name.clone();
         let column_desc: String = columns.column_desc.clone().unwrap_or_default();
         let data_type: String = columns.data_type.clone();
