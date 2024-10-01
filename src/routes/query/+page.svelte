@@ -19,6 +19,8 @@
 	import { invoke } from '@tauri-apps/api';
 
 	let currTableName = '';
+	let tableData: TableData[] = [];
+
 
 	onMount(async () => {
 		await fetch_table_list();
@@ -27,6 +29,7 @@
 	const handleClick = async (e: any) => {
 		currTableName = e.target.innerHTML;
 		const tableInfo = $table_list.filter((item) => item.table_name === currTableName)[0];
+		console.log("tableInfo:",tableInfo)
 		let esi = new ExportSpecInput();
 		esi.set_sync_no(tableInfo.sync_no);
 		esi.set_sync_version(tableInfo.sync_version);
@@ -48,7 +51,6 @@
 		await copyToClipboard($table_selected.table_name);
 	};
 
-	let tableData: TableData[] = [];
 	const handleDataQuery = async () => {
 		const input = $table_selected;
 		let res = (await invoke('get_table_data', { input })) as TableData[];
