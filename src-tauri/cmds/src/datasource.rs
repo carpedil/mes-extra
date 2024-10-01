@@ -1,6 +1,6 @@
 use std::{env, ops::Mul};
 
-use common::{excel_helper::XlsxHelper, input::ExportSpecInput, output::TableRawData};
+use common::{excel_helper::XlsxHelper, input::ExportSpecInput};
 use entity::connection_config::{self};
 use oracle::Connection;
 use sea_orm::DbErr;
@@ -154,44 +154,6 @@ impl DatasourceCmd {
             let current_dir = env::current_dir().expect("Failed to get current directory");
             let file_path = current_dir.join(xls_helper.file_name);
             return Ok(file_path.to_str().unwrap().to_string());
-        }
-        Err(sea_orm::DbErr::Custom(
-            "no actived connection_config to use".into(),
-        ))
-    }
-
-    pub async fn get_table_data(input: ExportSpecInput) -> Result<Vec<TableRawData>, DbErr> {
-        if let Some(connection_config) = ConnectionConfigCmd::get_actived_config().await {
-            let dqs = DatasourceCmd::new(connection_config);
-            let rows = dqs
-                .conn
-                .query(&input.query_sql, &[])
-                .map_err(|e| DbErr::Custom(e.to_string()))?;
-
-            // let _pt = TableColumnsInfo::new(&input.table_name, "".into(), vec![]);
-            let mut data_list: Vec<TableRawData> = vec![];
-            for (_, row) in rows.enumerate() {
-                match row {
-                    Ok(r) => {
-                        // let mut data: BTreeMap<String, String> = BTreeMap::new();
-                        let mut row_value_list: Vec<String> = vec![];
-                        for (_, col) in input.headers.iter().enumerate() {
-                            if let Some(value) = r
-                                .get::<&str, Option<String>>(&col.column_name)
-                                .unwrap_or_default()
-                            {
-                                // data.insert(col.to_string(), value);
-                                row_value_list.push(value)
-                            } else {
-                                row_value_list.push(String::new())
-                            }
-                        }
-                        data_list.push(TableRawData::new(row_value_list))
-                    }
-                    Err(e) => return Err(sea_orm::DbErr::Custom(e.to_string())),
-                }
-            }
-            return Ok(data_list);
         }
         Err(sea_orm::DbErr::Custom(
             "no actived connection_config to use".into(),

@@ -27,9 +27,8 @@ async fn main() {
             delete_config_by_id,
             active_config_by_id,
             dump_datasource_tables,
-            get_table_data,
             get_table_infos,
-            get_table_data2,
+            get_table_data,
             export_table_data
         ])
         .run(tauri::generate_context!())

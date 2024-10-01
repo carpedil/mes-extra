@@ -10,17 +10,22 @@
 	import { Ban, ListChecks, ScanSearch, Save } from 'lucide-svelte';
 	import SqlBlock from '$lib/components/SqlBlock.svelte';
 	import { onMount } from 'svelte';
-	import { fetch_table_list, table_list, set_table_selected, table_selected } from '$lib/stores/db';
+	import {
+		fetch_table_list,
+		table_list,
+		set_table_selected,
+		table_selected,
+		table_values,
+		table_headers
+	} from '$lib/stores/db';
 	import * as Command from '$lib/components/ui/command/index';
 	import { copyToClipboard } from '$lib';
-	import { ExportSpecInput, TableData } from '$lib/schema';
+	import { ExportSpecInput } from '$lib/schema';
 	import { exportBreathingFlag } from '$lib/stores/flags';
 	import { toast } from 'svelte-sonner';
 	import { invoke } from '@tauri-apps/api';
 
 	let currTableName = '';
-	let tableData: TableData[] = [];
-
 
 	onMount(async () => {
 		await fetch_table_list();
@@ -29,22 +34,15 @@
 	const handleClick = async (e: any) => {
 		currTableName = e.target.innerHTML;
 		const tableInfo = $table_list.filter((item) => item.table_name === currTableName)[0];
-		console.log("tableInfo:",tableInfo)
-		let esi = new ExportSpecInput();
-		esi.set_sync_no(tableInfo.sync_no);
-		esi.set_sync_version(tableInfo.sync_version);
-		esi.set_table_name(tableInfo.table_name);
-		esi.set_headers(tableInfo.column_infos);
-		esi.set_query_sql('');
-		set_table_selected(esi);
+		console.log('tableInfo:', tableInfo);
+		set_table_selected(tableInfo);
 		const input = $table_selected;
 		let res = (await invoke('get_table_data2', {
-			sync_no: input.sync_no,
-			sync_version: input.sync_version,
-			table_name: input.table_name
+			query_sql: input.query_sql
 		})) as any;
 		console.log('get_table_data2', res);
-		tableData = res.data;
+		table_headers.set(res.data.headers);
+		table_values.set(res.data.values);
 	};
 
 	const handleCopyToClipboard = async () => {
@@ -53,9 +51,10 @@
 
 	const handleDataQuery = async () => {
 		const input = $table_selected;
-		let res = (await invoke('get_table_data', { input })) as TableData[];
-		console.log('get_table_data:', res, input);
-		tableData = res;
+		let res = (await invoke('get_table_data2', { query_sql: input.query_sql })) as any;
+		console.log('get_table_data:', res, input.query_sql);
+		table_headers.set(res.data.headers);
+		table_values.set(res.data.values);
 	};
 
 	const handleAllTableExport = async () => {
@@ -154,7 +153,7 @@
 										</Command.Root>
 									</ScrollArea>
 								</ContextMenu.Trigger>
-								<ContextMenu.Content>
+								<ContextMenu.Content class="bg-white">
 									<ContextMenu.Item>
 										<button class="h-fit w-full p-1 text-left" on:click={handleAllTableExport}
 											>Export All Tables</button
@@ -186,11 +185,11 @@
 											</tr>
 										</thead>
 										<tbody>
-											{#each $table_selected.headers as header}
+											{#each $table_selected.column_infos as column}
 												<tr>
-													<td>{header.column_name}</td>
-													<td>{header.data_type}</td>
-													<td>{header.data_len}</td>
+													<td>{column.column_name}</td>
+													<td>{column.data_type}</td>
+													<td>{column.data_len}</td>
 												</tr>
 											{/each}
 										</tbody>
@@ -246,15 +245,15 @@
 										<Table.Root class="text-xs text-slate-500">
 											<Table.Header class="border">
 												<Table.Row>
-													{#each $table_selected.headers as heaser}
-														<Table.Head>{heaser.column_name}</Table.Head>
+													{#each $table_headers as header}
+														<Table.Head>{header}</Table.Head>
 													{/each}
 												</Table.Row>
 											</Table.Header>
 											<Table.Body>
-												{#each tableData as item}
+												{#each $table_values as item}
 													<Table.Row>
-														{#each item.data as value}
+														{#each item as value}
 															<Table.Cell class="border font-medium">{value}</Table.Cell>
 														{/each}
 													</Table.Row>

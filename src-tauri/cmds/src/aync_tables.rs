@@ -13,6 +13,7 @@ use entity::{
     sync_table_columns_info::{self, Entity as SyncTableColumnsInfo},
     sync_tables::{self},
 };
+use regex::Regex;
 use sea_orm::{
     prelude::Expr, ColumnTrait, DatabaseConnection, DbConn, DbErr, EntityTrait, QueryFilter,
     QueryOrder, QuerySelect, Set,
@@ -180,88 +181,48 @@ impl SyncTableCmd {
         }
     }
 
-    pub async fn get_table_data(
-        sync_no: String,
-        sync_version: i32,
-        table_name: String,
-    ) -> AppResult<Vec<TableRawData>> {
-        let db = SyncTableCmd::get_db_conn().await;
-        let table_info = sync_tables::Entity::find()
-            .filter(sync_tables::Column::SyncNo.eq(sync_no))
-            .filter(sync_tables::Column::SyncVersion.eq(sync_version))
-            .filter(sync_tables::Column::TableName.eq(table_name))
-            .find_also_related(SyncTableColumnsInfo)
-            .all(&db)
-            .await;
+    pub async fn get_table_data(query_sql: String) -> AppResult<TableRawData> {
+        let cc = ConnectionConfigCmd::get_actived_config().await.unwrap();
+        let source_db = DatasourceCmd::new(cc);
+        let headers = extrat_headers(&query_sql);
+        dbg!(&headers);
+        let mut values: Vec<Vec<String>> = vec![];
+        let rows = source_db
+            .conn
+            .query(&query_sql, &[])
+            .map_err(|e| DbErr::Custom(e.to_string()))
+            .unwrap();
 
-        let mut data_list: Vec<TableRawData> = vec![];
-        match table_info {
-            Ok(data) => {
-                if &data.is_empty() == &true {
-                    return AppResult {
-                        code: 404,
-                        message: "Resource is not reachable".into(),
-                        error: AppErr::DbErr(format!("no data found ")),
-                        data: data_list,
-                    };
-                }
-                let table_infos = convert_to_table_infos_list(data);
-                // dbg!(&table_infos);
-                let sql = gen_query_script(&table_infos[0]);
-                let headers = &table_infos[0]
-                    .column_infos
-                    .iter()
-                    .map(|col| col.column_name.clone())
-                    .collect::<Vec<String>>();
-                let cc = ConnectionConfigCmd::get_actived_config().await.unwrap();
-                let source_db = DatasourceCmd::new(cc);
-
-                let rows = source_db
-                    .conn
-                    .query(&sql, &[])
-                    .map_err(|e| DbErr::Custom(e.to_string()))
-                    .unwrap();
-
-                for (idx, row) in rows.enumerate() {
-                    match row {
-                        Ok(r) => {
-                            let mut row_value_list: Vec<String> = vec![];
-                            for (_, col) in headers.iter().enumerate() {
-                                if let Some(value) =
-                                    r.get::<&str, Option<String>>(&col).unwrap_or_default()
-                                {
-                                    row_value_list.push(value)
-                                } else {
-                                    row_value_list.push(String::new())
-                                }
-                            }
-                            data_list.push(TableRawData::new(row_value_list))
-                        }
-                        Err(e) => {
-                            return AppResult {
-                                code: 505,
-                                message: format!("empty data at row idx: {}", idx),
-                                error: AppErr::CustomErr(format!("DbErr: {}", e)),
-                                data: data_list,
-                            }
+        for (idx, row) in rows.enumerate() {
+            match row {
+                Ok(r) => {
+                    // dbg!(&r);
+                    let mut row_value_list: Vec<String> = vec![];
+                    for col in headers.iter() {
+                        if let Some(value) = r.get::<&str, Option<String>>(&col).unwrap_or_default()
+                        {
+                            row_value_list.push(value)
+                        } else {
+                            row_value_list.push(String::new())
                         }
                     }
+                    values.push(row_value_list)
                 }
-                AppResult {
-                    code: 200,
-                    message: "success".to_string(),
-                    error: AppErr::None,
-                    data: data_list,
-                }
-            }
-            Err(e) => {
-                return AppResult {
-                    code: 404,
-                    message: "data not found".into(),
-                    data: data_list,
-                    error: AppErr::CustomErr(format!("data not  found,{:?}", e)),
+                Err(e) => {
+                    return AppResult {
+                        code: 505,
+                        message: format!("empty data at row idx: {}", idx),
+                        error: AppErr::CustomErr(format!("DbErr: {}", e)),
+                        data: TableRawData::new(headers, values),
+                    }
                 }
             }
+        }
+        AppResult {
+            code: 200,
+            message: "success".to_string(),
+            error: AppErr::None,
+            data: TableRawData::new(headers, values),
         }
     }
 
@@ -463,13 +424,16 @@ fn convert_to_table_infos_list(
         .into_iter()
         .map(
             |((sync_no, sync_version, table_name, table_desc), column_infos)| {
-                SyncedTableColumnsInfo {
+                let model = SyncedTableColumnsInfo::new(
                     sync_no,
                     sync_version,
-                    table_name,
+                    &table_name,
                     table_desc,
+                    "".to_string(),
                     column_infos,
-                }
+                );
+                let query_sql = gen_query_script(&model);
+                SyncedTableColumnsInfo { query_sql, ..model }
             },
         )
         .collect();
@@ -495,6 +459,43 @@ async fn latest_version(table_name: String) -> LatestVersion {
 
 fn gen_sync_no() -> String {
     format!("{}", chrono::Local::now().format("%Y-%m-%d").to_string())
+}
+
+fn extrat_headers(query_sql: &str) -> Vec<String> {
+    println!("query_sql: {}", query_sql);
+    // 使用正则表达式提取SELECT语句中的字段，包括AS别名
+    let re = Regex::new(r"(?i)SELECT\s+([\s\S]*?)\s+FROM").unwrap();
+
+    if let Some(caps) = re.captures(query_sql) {
+        // 将字段按逗号分隔并去除空格
+        let fields = caps[1]
+            .split(',')
+            .map(|field| field.trim().to_string())
+            .collect::<Vec<String>>();
+
+        // 处理AS别名
+        let mut result = Vec::new();
+        for field in fields {
+            println!("field : {}", field);
+            if field.contains("as") || field.contains("AS") {
+                // 如果包含AS，取AS后面的部分作为字段
+                if let Some(alias) = field.split_whitespace().last() {
+                    println!("{} / {}", field, alias);
+                    result.push(alias.to_string().replace("\"", ""));
+                }
+            } else if field.contains(".") {
+                if let Some(f) = field.split(".").last() {
+                    result.push(f.to_string());
+                }
+            } else {
+                // 否则直接添加原字段
+                result.push(field);
+            }
+        }
+        return result;
+    }
+
+    Vec::new() // 如果没有匹配，返回空向量
 }
 
 #[cfg(test)]
@@ -538,8 +539,11 @@ mod tests {
 
     #[test]
     async fn test_get_table_infos() {
-        let data =
-            SyncTableCmd::get_table_data("2024-09-21".to_string(), 1, "ALARMS".to_string()).await;
+        let data = SyncTableCmd::get_table_data(
+            "SELECT id,sync_no,sync_version, COUNT(sync_version) as cnt from sync_tables "
+                .to_owned(),
+        )
+        .await;
         dbg!(&data);
     }
 

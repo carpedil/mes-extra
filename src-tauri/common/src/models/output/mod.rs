@@ -23,6 +23,7 @@ pub struct SyncedTableColumnsInfo {
     pub sync_version: i32,
     pub table_name: String,
     pub table_desc: String,
+    pub query_sql: String,
     pub column_infos: Vec<ColumnData>,
 }
 
@@ -32,6 +33,7 @@ impl SyncedTableColumnsInfo {
         sync_version: i32,
         table_name: &str,
         table_desc: String,
+        query_sql: String,
         column_infos: Vec<ColumnData>,
     ) -> Self {
         Self {
@@ -39,6 +41,7 @@ impl SyncedTableColumnsInfo {
             sync_version,
             table_name: table_name.to_owned(),
             table_desc,
+            query_sql,
             column_infos,
         }
     }
@@ -77,12 +80,13 @@ impl ColumnData {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TableRawData {
     // pub data: BTreeMap<String,String>
-    pub data: Vec<String>,
+    pub headers: Vec<String>,
+    pub values: Vec<Vec<String>>,
 }
 
 impl TableRawData {
-    pub fn new(data: Vec<String>) -> Self {
-        Self { data }
+    pub fn new(headers: Vec<String>, values: Vec<Vec<String>>) -> Self {
+        Self { headers, values }
     }
 }
 

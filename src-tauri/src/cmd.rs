@@ -43,11 +43,6 @@ pub async fn dump_datasource_tables(dump_spec: Vec<ExportSpecInput>) -> String {
         .unwrap()
 }
 
-#[tauri::command]
-pub async fn get_table_data(input: ExportSpecInput) -> Vec<TableRawData> {
-    DatasourceCmd::get_table_data(input).await.unwrap()
-}
-
 #[tauri::command(rename_all = "snake_case")]
 pub async fn get_table_infos(
     sync_input: Option<SyncInput>,
@@ -56,12 +51,8 @@ pub async fn get_table_infos(
 }
 
 #[tauri::command(rename_all = "snake_case")]
-pub async fn get_table_data2(
-    sync_no: String,
-    sync_version: i32,
-    table_name: String,
-) -> AppResult<Vec<TableRawData>> {
-    SyncTableCmd::get_table_data(sync_no, sync_version, table_name).await
+pub async fn get_table_data(query_sql: String) -> AppResult<TableRawData> {
+    SyncTableCmd::get_table_data(query_sql).await
 }
 
 #[tauri::command(rename_all = "snake_case")]

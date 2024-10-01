@@ -42,6 +42,7 @@ export class TableColumnsInfo {
 	public sync_no: string = '';
 	public sync_version: number = 0;
 	public table_name: string = '';
+	public query_sql: string = '';
 	public column_infos: ColumnData[] = [];
 }
 
@@ -80,13 +81,8 @@ export class ExportSpecInput {
 		this.headers = column_infos;
 	}
 
-	set_query_sql(where_clause: string) {
-		const select_fields = this.headers.map((header) => header.column_name).join(', ');
-		where_clause === ''
-			? (this.query_sql = `SELECT ${select_fields} FROM ${this.table_name} ORDER BY ${this.headers[1].column_name}`)
-			: (this.query_sql = `SELECT ${select_fields} FROM ${this.table_name} ${where_clause.toUpperCase()} ORDER BY ${this.headers[1].column_name} `);
-
-		this.query_sql = format(this.query_sql.trim(), { language: 'sql' });
+	set_query_sql(query_sql: string) {
+		this.query_sql = format(query_sql.trim(), { language: 'sql' });
 	}
 }
 
@@ -113,5 +109,11 @@ export class BannedTableInfo {
 }
 
 export class TableData {
-	data: string[] = [];
+	public headers: string[] = [];
+	public values: string[][] = [];
+
+	constructor(headers: string[], values: string[][]) {
+		this.headers = headers;
+		this.values = values;
+	}
 }
