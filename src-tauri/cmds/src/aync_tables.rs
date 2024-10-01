@@ -3,20 +3,27 @@ use std::{collections::HashMap, env};
 use common::{
     constants::DATABASE_URL,
     excel_helper::XlsxHelper,
-    input::{ColumnDataInput, ExportSpecInput},
-    output::{AppErr, AppResult, ColumnData, DbTableStruct, TableColumnsInfo, TableRawData},
+    input::{ColumnDataInput, ExportSpecInput, SyncInput},
+    output::{
+        AppErr, AppResult, ColumnData, SyncedTableColumnsInfo, TableColumnsInfo, TableRawData,
+    },
     utils::{gen_uid, get_user_tab_columns_sql},
 };
 use entity::{
     sync_table_columns_info::{self, Entity as SyncTableColumnsInfo},
     sync_tables::{self},
 };
-use sea_orm::{ColumnTrait, DbConn, DbErr, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use sea_orm::{
+    prelude::Expr, ColumnTrait, DatabaseConnection, DbConn, DbErr, EntityTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::{ConnectionConfigCmd, DatasourceCmd};
 
 pub struct SyncTableCmd;
+type MaxSyncNo = String;
+type MaxSyncVersion = i32;
 
 impl SyncTableCmd {
     pub fn new() -> Self {
@@ -38,7 +45,7 @@ impl SyncTableCmd {
                 .conn
                 .query(&get_user_tab_columns_sql(cc.abandoned_table_list), &[])
                 .unwrap();
-            let mut row_list: Vec<DbTableStruct> = vec![];
+            let mut row_list: Vec<ColumnData> = vec![];
             for row in data.into_iter() {
                 let row = row.unwrap();
                 let table_name: String = row.get("TABLE_NAME").unwrap();
@@ -47,7 +54,7 @@ impl SyncTableCmd {
                 let column_desc: String = row.get("COL_DESC").unwrap_or("".to_string());
                 let data_type: String = row.get("DATA_TYPE").unwrap();
                 let data_len: i32 = row.get("DATA_LENGTH").unwrap();
-                let row_data = DbTableStruct {
+                let row_data = ColumnData {
                     table_name,
                     table_desc,
                     column_name,
@@ -61,14 +68,7 @@ impl SyncTableCmd {
                 table_columns
                     .entry((row.table_name.clone(), row.table_desc.clone()))
                     .or_insert(Vec::new())
-                    .push(ColumnData {
-                        table_name: row.table_name,
-                        table_desc: row.table_desc,
-                        column_name: row.column_name,
-                        column_desc: row.column_desc,
-                        data_type: row.data_type,
-                        data_len: row.data_len,
-                    });
+                    .push(row);
             }
             let mut ptable_list: Vec<TableColumnsInfo> = table_columns
                 .into_iter()
@@ -130,19 +130,47 @@ impl SyncTableCmd {
         ))
     }
 
-    pub async fn get_table_infos(
-        sync_no: String,
-        sync_version: i32,
-    ) -> AppResult<Vec<TableColumnsInfo>> {
-        let db = SyncTableCmd::get_db_conn().await;
-
-        let data = sync_tables::Entity::find()
-            .filter(sync_tables::Column::SyncNo.eq(sync_no))
-            .filter(sync_tables::Column::SyncVersion.eq(sync_version))
-            .find_also_related(SyncTableColumnsInfo)
-            .all(&db)
+    async fn get_latest_one(db: &DatabaseConnection) -> Option<(MaxSyncNo, MaxSyncVersion)> {
+        sync_tables::Entity::find()
+            .select_only()
+            .column(sync_tables::Column::SyncNo)
+            .column_as(Expr::col(sync_tables::Column::SyncVersion).max(), "max_sv")
+            .group_by(sync_tables::Column::SyncNo)
+            .into_tuple::<(MaxSyncNo, MaxSyncVersion)>()
+            .one(db)
             .await
-            .unwrap();
+            .unwrap()
+    }
+
+    pub async fn get_table_infos(
+        sync_input: Option<SyncInput>,
+    ) -> AppResult<Vec<SyncedTableColumnsInfo>> {
+        let db = SyncTableCmd::get_db_conn().await;
+        let mut data: Vec<(sync_tables::Model, Option<sync_table_columns_info::Model>)> = vec![];
+        match sync_input {
+            Some(sync_input) => {
+                data = sync_tables::Entity::find()
+                    .filter(sync_tables::Column::SyncNo.eq(sync_input.sync_no))
+                    .filter(sync_tables::Column::SyncVersion.eq(sync_input.sync_version))
+                    .find_also_related(SyncTableColumnsInfo)
+                    .all(&db)
+                    .await
+                    .unwrap();
+            }
+            None => {
+                if let Some(latest_one) = SyncTableCmd::get_latest_one(&db).await {
+                    println!("latest_one:{:?}", &latest_one);
+                    data = sync_tables::Entity::find()
+                        .filter(sync_tables::Column::SyncNo.eq(latest_one.0))
+                        .filter(sync_tables::Column::SyncVersion.eq(latest_one.1))
+                        .find_also_related(SyncTableColumnsInfo)
+                        .all(&db)
+                        .await
+                        .unwrap();
+                }
+            }
+        }
+
         let table_columns_info = convert_to_table_infos_list(data);
         AppResult {
             code: 200,
@@ -387,7 +415,7 @@ pub struct ExportRange {
     table_name: Option<String>,
 }
 
-fn gen_query_script(table: &TableColumnsInfo) -> String {
+fn gen_query_script(table: &SyncedTableColumnsInfo) -> String {
     let select_fields = table
         .column_infos
         .iter()
@@ -400,11 +428,13 @@ fn gen_query_script(table: &TableColumnsInfo) -> String {
 
 fn convert_to_table_infos_list(
     raw_data: Vec<(sync_tables::Model, Option<sync_table_columns_info::Model>)>,
-) -> Vec<TableColumnsInfo> {
-    let mut table_columns: HashMap<(String, String), Vec<ColumnData>> = HashMap::new();
+) -> Vec<SyncedTableColumnsInfo> {
+    let mut table_columns: HashMap<(String, i32, String, String), Vec<ColumnData>> = HashMap::new();
     for row in raw_data.iter() {
         let table = row.0.clone();
         let columns = row.1.clone().unwrap();
+        let sync_no = table.sync_no.clone();
+        let sync_version = table.sync_version.clone();
         let table_name: String = table.table_name.clone();
         let table_desc: String = table.table_desc.unwrap().clone();
         let column_name: String = columns.column_name.clone();
@@ -413,7 +443,12 @@ fn convert_to_table_infos_list(
         let data_len: i32 = columns.data_len.clone();
 
         table_columns
-            .entry((table_name.clone(), table_desc.clone()))
+            .entry((
+                sync_no.clone(),
+                sync_version.clone(),
+                table_name.clone(),
+                table_desc.clone(),
+            ))
             .or_insert(Vec::new())
             .push(ColumnData {
                 table_name,
@@ -424,13 +459,17 @@ fn convert_to_table_infos_list(
                 data_len,
             });
     }
-    let table_columns_info: Vec<TableColumnsInfo> = table_columns
+    let table_columns_info: Vec<SyncedTableColumnsInfo> = table_columns
         .into_iter()
         .map(
-            |((table_name, table_desc), column_infos)| TableColumnsInfo {
-                table_name,
-                table_desc,
-                column_infos,
+            |((sync_no, sync_version, table_name, table_desc), column_infos)| {
+                SyncedTableColumnsInfo {
+                    sync_no,
+                    sync_version,
+                    table_name,
+                    table_desc,
+                    column_infos,
+                }
             },
         )
         .collect();

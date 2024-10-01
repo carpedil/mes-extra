@@ -5,6 +5,12 @@ use serde::{Deserialize, Serialize};
 pub type FilePath = String;
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct SyncInput {
+    pub sync_no: String,
+    pub sync_version: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ExportSpecInput {
     pub table_name: String,
     pub headers: Vec<ColumnDataInput>,

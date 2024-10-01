@@ -1,16 +1,6 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DbTableStruct {
-    pub table_name: String,
-    pub table_desc: String,
-    pub column_name: String,
-    pub column_desc: String,
-    pub data_type: String,
-    pub data_len: i32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct TableColumnsInfo {
     pub table_name: String,
     pub table_desc: String,
@@ -20,6 +10,33 @@ pub struct TableColumnsInfo {
 impl TableColumnsInfo {
     pub fn new(table_name: &str, table_desc: String, column_infos: Vec<ColumnData>) -> Self {
         Self {
+            table_name: table_name.to_owned(),
+            table_desc,
+            column_infos,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SyncedTableColumnsInfo {
+    pub sync_no: String,
+    pub sync_version: i32,
+    pub table_name: String,
+    pub table_desc: String,
+    pub column_infos: Vec<ColumnData>,
+}
+
+impl SyncedTableColumnsInfo {
+    pub fn new(
+        sync_no: String,
+        sync_version: i32,
+        table_name: &str,
+        table_desc: String,
+        column_infos: Vec<ColumnData>,
+    ) -> Self {
+        Self {
+            sync_no,
+            sync_version,
             table_name: table_name.to_owned(),
             table_desc,
             column_infos,

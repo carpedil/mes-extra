@@ -120,7 +120,6 @@
 							</Tabs.Trigger>
 							<Tabs.Trigger value="mutedTables" class="flex-1 text-xs"><Ban />Banned</Tabs.Trigger>
 						</Tabs.List>
-						<div class="border w-full p-1">sync no | sync version</div>
 						<Tabs.Content value="tables" class="p-1">
 							<ContextMenu.Root>
 								<ContextMenu.Trigger>
