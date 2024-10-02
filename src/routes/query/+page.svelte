@@ -37,10 +37,10 @@
 		console.log('tableInfo:', tableInfo);
 		set_table_selected(tableInfo);
 		const input = $table_selected;
-		let res = (await invoke('get_table_data2', {
+		let res = (await invoke('get_table_data', {
 			query_sql: input.query_sql
 		})) as any;
-		console.log('get_table_data2', res);
+		console.log('get_table_data', res);
 		table_headers.set(res.data.headers);
 		table_values.set(res.data.values);
 	};
@@ -51,7 +51,7 @@
 
 	const handleDataQuery = async () => {
 		const input = $table_selected;
-		let res = (await invoke('get_table_data2', { query_sql: input.query_sql })) as any;
+		let res = (await invoke('get_table_data', { query_sql: input.query_sql })) as any;
 		console.log('get_table_data:', res, input.query_sql);
 		table_headers.set(res.data.headers);
 		table_values.set(res.data.values);
