@@ -52,62 +52,6 @@ export class ColumnData {
 	public data_len: number = 0;
 }
 
-export class ExportSpecInput {
-	public sync_no: string = '';
-	public sync_version: number = 0;
-	public table_name: string = '';
-	public headers: ColumnData[] = [];
-	public query_sql: string = '';
-
-	constructor() {
-		this.table_name = '';
-		this.headers = [];
-		this.query_sql = '';
-	}
-
-	set_sync_no(sync_no: string) {
-		this.sync_no = sync_no;
-	}
-
-	set_sync_version(sync_version: number) {
-		this.sync_version = sync_version;
-	}
-
-	set_table_name(table_name: string) {
-		this.table_name = table_name;
-	}
-
-	set_headers(column_infos: ColumnData[]) {
-		this.headers = column_infos;
-	}
-
-	set_query_sql(query_sql: string) {
-		this.query_sql = format(query_sql.trim(), { language: 'sql' });
-	}
-}
-
-export class SrvResult<T> {
-	public code: number = 200;
-	public message: string = 'success';
-	public data: T;
-
-	constructor(code: number, message: string, data: any) {
-		this.code = code;
-		this.message = message;
-		this.data = data;
-	}
-}
-
-export class BannedTableInfo {
-	public tableName: string = '';
-	public tableList: string[] = [];
-	constructor(tableName: string, tableList: string[]) {
-		this.tableName = tableName;
-		const notExists = !tableList.includes(tableName);
-		this.tableList = notExists && tableName != '' ? [...tableList, tableName] : tableList;
-	}
-}
-
 export class TableData {
 	public headers: string[] = [];
 	public values: string[][] = [];

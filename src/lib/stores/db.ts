@@ -1,4 +1,4 @@
-import { ExportSpecInput, TableColumnsInfo } from '$lib/schema';
+import { TableColumnsInfo } from '$lib/schema';
 import { writable } from 'svelte/store';
 import { invoke } from '@tauri-apps/api';
 

@@ -20,7 +20,6 @@
 	} from '$lib/stores/db';
 	import * as Command from '$lib/components/ui/command/index';
 	import { copyToClipboard } from '$lib';
-	import { ExportSpecInput } from '$lib/schema';
 	import { exportBreathingFlag } from '$lib/stores/flags';
 	import { toast } from 'svelte-sonner';
 	import { invoke } from '@tauri-apps/api';
@@ -59,16 +58,13 @@
 
 	const handleAllTableExport = async () => {
 		exportBreathingFlag.set(true);
-		let dump_spec: ExportSpecInput[] = [];
-		for (const table of $table_list) {
-			let esi = new ExportSpecInput();
-			esi.set_table_name(table.table_name);
-			esi.set_headers(table.column_infos);
-			esi.set_query_sql('');
-			dump_spec.push(esi);
-		}
-		let res = (await invoke('dump_datasource_tables', { dump_spec })) as string;
-		console.log('dump_datasource_tables:', res);
+		let res = (await invoke('export_table_data', {
+			export_range: {
+				sync_no: $table_selected.sync_no,
+				sync_version: $table_selected.sync_version
+			}
+		})) as string;
+		console.log('export_table_data:', res);
 		exportBreathingFlag.set(false);
 		if (!res) {
 			toast.error('Data Export Failed', {
@@ -86,17 +82,14 @@
 
 	const handleCurrTableExport = async () => {
 		exportBreathingFlag.set(true);
-		let dump_spec: ExportSpecInput[] = [];
-		for (const table of $table_list) {
-			let esi = new ExportSpecInput();
-			esi.set_table_name(table.table_name);
-			esi.set_headers(table.column_infos);
-			esi.set_query_sql('');
-			dump_spec.push(esi);
-		}
-
-		let res = (await invoke('dump_datasource_tables', { dump_spec })) as string;
-		console.log('dump_datasource_tables:', res);
+		let res = (await invoke('export_table_data', {
+			export_range: {
+				sync_no: $table_selected.sync_no,
+				sync_version: $table_selected.sync_version,
+				table_name: $table_selected.table_name
+			}
+		})) as string;
+		console.log('export_table_data:', res);
 		exportBreathingFlag.set(false);
 		if (!res) {
 			toast.error('Data Export Failed', {
