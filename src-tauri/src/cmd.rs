@@ -3,11 +3,8 @@ use common::input::SyncInput;
 use common::output::{AppResult, SyncedTableColumnsInfo};
 use entity::connection_config;
 
-use cmds::datasource::DatasourceCmd;
 use cmds::{aync_tables::SyncTableCmd, configs::ConnectionConfigCmd};
-use common::{
-    input::ExportSpecInput, models::input::CreateConnectionConfigInput, output::TableRawData,
-};
+use common::{models::input::CreateConnectionConfigInput, output::TableRawData};
 
 #[tauri::command]
 pub async fn new_config(config: CreateConnectionConfigInput) -> connection_config::Model {
@@ -33,14 +30,6 @@ pub async fn delete_config_by_id(id: String) -> u64 {
 #[tauri::command]
 pub async fn active_config_by_id(id: String) -> connection_config::Model {
     ConnectionConfigCmd::active_config_by_id(id).await.unwrap()
-}
-
-#[tauri::command(rename_all = "snake_case")]
-pub async fn dump_datasource_tables(dump_spec: Vec<ExportSpecInput>) -> String {
-    dbg!(&dump_spec);
-    DatasourceCmd::dump_datasource_tables(dump_spec)
-        .await
-        .unwrap()
 }
 
 #[tauri::command(rename_all = "snake_case")]

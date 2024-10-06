@@ -26,7 +26,6 @@ async fn main() {
             get_all_configs,
             delete_config_by_id,
             active_config_by_id,
-            dump_datasource_tables,
             get_table_infos,
             get_table_data,
             export_table_data

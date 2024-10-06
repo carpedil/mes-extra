@@ -359,8 +359,8 @@ impl SyncTableCmd {
             .to_str()
             .unwrap()
             .to_string();
-        
-        println!("export completed : file_path:{}",file_path);
+
+        println!("export completed : file_path:{}", file_path);
 
         AppResult {
             code: 200,
