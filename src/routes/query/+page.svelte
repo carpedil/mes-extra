@@ -239,7 +239,7 @@
 											<Table.Header class="border">
 												<Table.Row>
 													{#each $table_headers as header}
-														<Table.Head>{header}</Table.Head>
+														<Table.Head class='border-2'>{header}</Table.Head>
 													{/each}
 												</Table.Row>
 											</Table.Header>
