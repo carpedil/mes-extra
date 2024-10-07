@@ -14,10 +14,10 @@
 			<Command.Item>
 				<a href="/query">Query</a>
 			</Command.Item>
-			<!-- <Command.Item>
+			<Command.Item>
 				<a href="/export">Export</a>
 			</Command.Item>
-			<Command.Item>
+			<!-- <Command.Item>
 				<a href="/playground">Playground</a>
 			</Command.Item> -->
 		</Command.Group>

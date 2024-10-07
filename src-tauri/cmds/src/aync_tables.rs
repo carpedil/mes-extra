@@ -3,7 +3,7 @@ use std::{collections::HashMap, env};
 use common::{
     constants::DATABASE_URL,
     excel_helper::XlsxHelper,
-    input::{ColumnDataInput, ExportSpecInput, SyncInput},
+    input::{ColumnDataInput, ExportSpecInput, ProcessFlow, ProcessFlowVersion, ProductDef, ProductDefVersion, SyncInput},
     output::{
         AppErr, AppResult, ColumnData, SyncedTableColumnsInfo, TableColumnsInfo, TableRawData,
     },
@@ -367,6 +367,135 @@ impl SyncTableCmd {
             message: "success".into(),
             error: AppErr::None,
             data: file_path,
+        }
+    }
+
+    pub async fn get_product_def_list() -> AppResult<Vec<ProductDef>> {
+        let cc = ConnectionConfigCmd::get_actived_config().await.unwrap();
+        let source_db = DatasourceCmd::new(cc);
+        let sql = r"SELECT DISTINCT PRODUCT_DEF_NAME,PROCESS_FLOW_NAME FROM PRODUCT_DEF WHERE PRODUCT_DEF_STATE ='Active' ORDER BY PRODUCT_DEF_NAME ASC";
+        let results = source_db.conn.query(&sql, &[]).map_err(|err| {
+            eprintln!("err:{}", err);
+        });
+        let mut products:Vec<ProductDef> = Vec::new();
+        match results {
+            Ok(rows) => {
+                for row in rows.into_iter() {
+                    if let Ok(r) = row {
+                        let product_def_name:String = r.get("PRODUCT_DEF_NAME").unwrap();
+                        let process_flow_name:String = r.get("PROCESS_FLOW_NAME").unwrap();
+                        println!("product_def_name:{}",product_def_name);
+                        products.push(ProductDef{
+                            product_def_name,
+                            process_flow_name
+                        })
+                    }
+                }
+            },
+            Err(_) => {println!("no data found")},
+        }
+        
+        AppResult {
+            code: 200,
+            message: "success".into(),
+            error: AppErr::None,
+            data: products,
+        }
+    }
+
+    pub async fn get_product_def_ver_list(product_def_name:String) -> AppResult<Vec<ProductDefVersion>> {
+        let cc = ConnectionConfigCmd::get_actived_config().await.unwrap();
+        let source_db = DatasourceCmd::new(cc);
+        let sql = r"SELECT DISTINCT PRODUCT_DEF_VERSION,PRODUCT_DEF_STATE FROM PRODUCT_DEF WHERE PRODUCT_DEF_NAME = :1 ORDER BY PRODUCT_DEF_VERSION ASC";
+        let results = source_db.conn.query(&sql, &[&product_def_name]).map_err(|err| {
+            eprintln!("err:{}", err);
+        });
+        let mut products:Vec<ProductDefVersion> = Vec::new();
+        match results {
+            Ok(rows) => {
+                for row in rows.into_iter() {
+                    if let Ok(r) = row {
+                        let product_def_ver:String = r.get("PRODUCT_DEF_VERSION").unwrap();
+                        let product_def_state:String = r.get("PRODUCT_DEF_STATE").unwrap();
+                        products.push(ProductDefVersion{
+                            product_def_ver,
+                            product_def_state
+                        })
+                    }
+                }
+            },
+            Err(_) => {println!("no data found")},
+        }
+        
+        AppResult {
+            code: 200,
+            message: "success".into(),
+            error: AppErr::None,
+            data: products,
+        }
+    }
+
+    pub async fn get_process_flow_list(product_def_name:String) -> AppResult<Vec<ProcessFlow>> {
+        let cc = ConnectionConfigCmd::get_actived_config().await.unwrap();
+        let source_db = DatasourceCmd::new(cc);
+        let sql = r"SELECT DISTINCT PROCESS_FLOW_NAME ,PROCESS_FLOW_VERSION FROM PRODUCT_DEF WHERE PRODUCT_DEF_NAME = :1 ORDER BY PROCESS_FLOW_NAME ASC";
+        let results = source_db.conn.query(&sql, &[&product_def_name]).map_err(|err| {
+            eprintln!("err:{}", err);
+        });
+        let mut products:Vec<ProcessFlow> = Vec::new();
+        match results {
+            Ok(rows) => {
+                for row in rows.into_iter() {
+                    if let Ok(r) = row {
+                        let process_flow_name:String = r.get("PROCESS_FLOW_NAME").unwrap();
+                        let process_flow_ver:String = r.get("PROCESS_FLOW_VERSION").unwrap();
+                        products.push(ProcessFlow{
+                            process_flow_name,
+                            process_flow_ver
+                        })
+                    }
+                }
+            },
+            Err(_) => {println!("no data found")},
+        }
+        
+        AppResult {
+            code: 200,
+            message: "success".into(),
+            error: AppErr::None,
+            data: products,
+        }
+    }
+
+    pub async fn get_process_flow_ver_list(process_flow_name:String) -> AppResult<Vec<ProcessFlowVersion>> {
+        let cc = ConnectionConfigCmd::get_actived_config().await.unwrap();
+        let source_db = DatasourceCmd::new(cc);
+        let sql = r"SELECT DISTINCT PROCESS_FLOW_NAME ,PROCESS_FLOW_VERSION,PROCESS_FLOW_STATE FROM PROCESS_FLOW WHERE PROCESS_FLOW_NAME=:1 ORDER BY PROCESS_FLOW_VERSION ASC";
+        let results = source_db.conn.query(&sql, &[&process_flow_name]).map_err(|err| {
+            eprintln!("err:{}", err);
+        });
+        let mut products:Vec<ProcessFlowVersion> = Vec::new();
+        match results {
+            Ok(rows) => {
+                for row in rows.into_iter() {
+                    if let Ok(r) = row {
+                        let process_flow_ver:String = r.get("PROCESS_FLOW_VERSION").unwrap();
+                        let process_flow_state:String = r.get("PROCESS_FLOW_STATE").unwrap();
+                        products.push(ProcessFlowVersion{
+                            process_flow_ver,
+                            process_flow_state
+                        })
+                    }
+                }
+            },
+            Err(_) => {println!("no data found")},
+        }
+        
+        AppResult {
+            code: 200,
+            message: "success".into(),
+            error: AppErr::None,
+            data: products,
         }
     }
 }

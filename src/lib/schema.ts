@@ -61,3 +61,23 @@ export class TableData {
 		this.values = values;
 	}
 }
+
+export type ProductDef = {
+	product_def_name: string;
+	process_flow_name: string;
+};
+
+export type ProductDefVersions = {
+	product_def_ver: string;
+	product_def_state: string;
+};
+
+export type ProcessFlow = {
+	process_flow_name: string;
+	process_flow_state: string;
+};
+
+export type ProcessFlowVersions = {
+	process_flow_ver: string;
+	process_flow_state: string;
+};

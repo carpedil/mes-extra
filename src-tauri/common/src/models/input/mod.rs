@@ -59,3 +59,27 @@ pub struct MutationResult {
 pub struct AbandedTableNameInput {
     pub table_name: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProductDef {
+    pub product_def_name:String,
+    pub process_flow_name:String
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProductDefVersion {
+    pub product_def_ver:String,
+    pub product_def_state:String
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProcessFlow {
+    pub process_flow_name:String,
+    pub process_flow_ver:String
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProcessFlowVersion {
+    pub process_flow_ver:String,
+    pub process_flow_state:String
+}

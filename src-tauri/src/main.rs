@@ -28,7 +28,11 @@ async fn main() {
             active_config_by_id,
             get_table_infos,
             get_table_data,
-            export_table_data
+            export_table_data,
+            get_product_def_list,
+            get_product_def_ver_list,
+            get_process_flow_list,
+            get_process_flow_ver_list
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
