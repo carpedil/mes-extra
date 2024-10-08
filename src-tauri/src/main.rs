@@ -32,7 +32,8 @@ async fn main() {
             get_product_def_list,
             get_product_def_ver_list,
             get_process_flow_list,
-            get_process_flow_ver_list
+            get_process_flow_ver_list,
+            get_flow_export
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

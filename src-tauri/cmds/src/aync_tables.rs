@@ -1,9 +1,9 @@
 use std::{collections::HashMap, env};
 
 use common::{
-    constants::DATABASE_URL,
+    constants::{DATABASE_URL, FLOW_EXPORT_SQL},
     excel_helper::XlsxHelper,
-    input::{ColumnDataInput, ExportSpecInput, ProcessFlow, ProcessFlowVersion, ProductDef, ProductDefVersion, SyncInput},
+    input::{ColumnDataInput, ExportSpecInput, FlowExportInput, ProcessFlow, ProcessFlowVersion, ProductDef, ProductDefVersion, SyncInput},
     output::{
         AppErr, AppResult, ColumnData, SyncedTableColumnsInfo, TableColumnsInfo, TableRawData,
     },
@@ -496,6 +496,44 @@ impl SyncTableCmd {
             message: "success".into(),
             error: AppErr::None,
             data: products,
+        }
+    }
+
+    pub async fn get_flow_export(input: FlowExportInput) -> AppResult<TableRawData> {
+        println!("input: {:?}",input);
+        let cc = ConnectionConfigCmd::get_actived_config().await.unwrap();
+        let source_db = DatasourceCmd::new(cc);
+        let results = source_db.conn.query(&FLOW_EXPORT_SQL, &[&input.product_def_name,&input.product_def_ver,&input.process_flow_name,&input.process_flow_ver]).map_err(|err| {
+            eprintln!("err:{}", err);
+        });
+        let mut headers:Vec<String>=vec![];
+        let mut values:Vec<Vec<String>> =vec![];
+        match results {
+            Ok(rows) =>{
+                headers = rows.column_info().iter().map(|cl|cl.name().to_string()).collect::<Vec<String>>();
+                println!("{:?}",headers);
+                for row in rows.into_iter() {
+                    if let Ok(r) = row {
+                        let mut row_value_list: Vec<String> = vec![];
+                        for col in headers.iter(){
+                            if let Some(value) = r.get::<&str,Option<String>>(&col).unwrap_or_default(){
+                                row_value_list.push(value);
+                            } else {
+                                row_value_list.push(String::new());
+                            }
+                        }
+                        values.push(row_value_list);
+                    }
+                }
+            },
+            Err(_) =>{println!("no data found")},
+        }
+
+        AppResult {
+            code: 200,
+            message: "success".into(),
+            error: AppErr::None,
+            data: TableRawData::new(headers, values),
         }
     }
 }

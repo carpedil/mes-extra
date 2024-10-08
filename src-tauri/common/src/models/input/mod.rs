@@ -83,3 +83,11 @@ pub struct ProcessFlowVersion {
     pub process_flow_ver:String,
     pub process_flow_state:String
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FlowExportInput{
+    pub product_def_name:String,
+    pub product_def_ver:String,
+    pub process_flow_name:String,
+    pub process_flow_ver:String,
+}

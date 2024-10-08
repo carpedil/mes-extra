@@ -1,5 +1,5 @@
 use cmds::aync_tables::ExportRange;
-use common::input::{ProcessFlow, ProcessFlowVersion, ProductDef, ProductDefVersion, SyncInput};
+use common::input::{FlowExportInput, ProcessFlow, ProcessFlowVersion, ProductDef, ProductDefVersion, SyncInput};
 use common::output::{AppResult, SyncedTableColumnsInfo};
 use entity::connection_config;
 
@@ -68,4 +68,9 @@ pub async fn get_process_flow_list(product_def_name:String) -> AppResult<Vec<Pro
 #[tauri::command(rename_all = "snake_case")]
 pub async fn get_process_flow_ver_list(process_flow_name:String) -> AppResult<Vec<ProcessFlowVersion>> {
     SyncTableCmd::get_process_flow_ver_list(process_flow_name).await
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub async fn get_flow_export(input:FlowExportInput) -> AppResult<TableRawData> {
+    SyncTableCmd::get_flow_export(input).await
 }

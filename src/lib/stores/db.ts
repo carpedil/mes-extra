@@ -16,3 +16,6 @@ export const fetch_table_list = async () => {
 export const set_table_selected = (table: TableColumnsInfo) => {
 	table_selected.set(table);
 };
+
+export let flow_export_table_headers = writable<string[]>([]);
+export let flow_export_table_values = writable<string[][]>([]);
