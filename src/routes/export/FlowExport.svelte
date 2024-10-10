@@ -1,13 +1,7 @@
 <script lang="ts">
-	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import type { ProcessFlowVersions, ProductDef, ProductDefVersions } from '$lib/schema';
-	import {
-		flow_export_table_headers,
-		flow_export_table_values,
-		table_headers,
-		table_values
-	} from '$lib/stores/db';
+	import { flow_export_table_headers, flow_export_table_values } from '$lib/stores/db';
 	import { invoke } from '@tauri-apps/api';
 	import * as Table from '$lib/components/ui/table/index';
 	import { onMount } from 'svelte';
@@ -24,6 +18,8 @@
 	let processFlowVersions = writable<ProcessFlowVersions[]>([]);
 
 	onMount(async () => {
+		flow_export_table_headers.set([]);
+		flow_export_table_values.set([]);
 		let res = (await invoke('get_product_def_list')) as any;
 		productDefNames.set(res.data);
 		console.log('get_product_def_list:', productDefNames, res);
@@ -91,6 +87,11 @@
 			`${$selectedProductDefName}.${$selectedProductDefVersion}.${$selectedProcessFlowName}.${$selectedProcessFlowVersion}.xlsx`
 		);
 	};
+
+	const handleClear = () => {
+		flow_export_table_headers.set([]);
+		flow_export_table_values.set([]);
+	};
 </script>
 
 <div>
@@ -99,7 +100,13 @@
 			<label for="productName"
 				>ProductDefName:
 				<select name="products" id="products" on:change={handelProductChange}>
-					<option value="---" disabled selected>---</option>
+					<option
+						value="---------"
+						disabled
+						selected
+						placeholder="select product"
+						class="text-center">----请选择-----</option
+					>
 					{#each $productDefNames as product}
 						<option value={product.product_def_name} class="border-2"
 							>{product.product_def_name}</option
@@ -148,15 +155,12 @@
 				<Button size="sm" variant="outline" type="submit" class="w-fit" on:click={handleQuery}
 					>Query</Button
 				>
-				<Button
-					size="sm"
-					variant="outline"
-					type="reset"
-					class="w-fit"
-					on:click={() => history.go(0)}>Reset</Button
-				>
-				<Button size="sm" variant="outline" class="w-fit" on:click={handleDownload}>Download</Button
-				>
+				{#if $flow_export_table_headers.length != 0 && $flow_export_table_values.length != 0}
+					<Button size="sm" variant="outline" class="w-fit" on:click={handleDownload}
+						>Download</Button
+					>
+				{/if}
+				<Button size="sm" variant="outline" class="w-fit" on:click={handleClear}>Clear</Button>
 			</div>
 		{/if}
 	</form>

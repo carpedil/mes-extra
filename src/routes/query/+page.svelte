@@ -23,6 +23,7 @@
 	import { exportBreathingFlag } from '$lib/stores/flags';
 	import { toast } from 'svelte-sonner';
 	import { invoke } from '@tauri-apps/api';
+	import * as XLSX from 'xlsx';
 
 	let currTableName = '';
 
@@ -103,6 +104,13 @@
 				position: 'top-right'
 			});
 		}
+	};
+
+	const handleExport = () => {
+		const ws: XLSX.WorkSheet = XLSX.utils.table_to_sheet(document.getElementById('table-data'));
+		const wb: XLSX.WorkBook = XLSX.utils.book_new();
+		XLSX.utils.book_append_sheet(wb, ws, $table_selected.table_name);
+		XLSX.writeFile(wb, `${$table_selected.table_name}.xlsx`);
 	};
 </script>
 
@@ -224,18 +232,25 @@
 										<Button size="icon" variant="outline" class="p-0" on:click={handleDataQuery}
 											><ScanSearch /></Button
 										>
-										<Button
-											size="icon"
-											variant="outline"
-											class="p-0"
-											on:click={() => console.log('clicked')}><Save /></Button
+										<Button size="icon" variant="outline" class="p-0" on:click={handleExport}
+											><Save /></Button
 										>
+										{#if $table_selected.table_name != ''}
+											<div class="flex gap-5 ml-4">
+												<div>
+													Table Name: {$table_selected.table_name}
+												</div>
+												<div>
+													Total Rows:{$table_values.length}
+												</div>
+											</div>
+										{/if}
 									</Card.Root>
 									<ScrollArea
 										class="h-[55vh] w-[72vw] flex-1 overflow-x-auto whitespace-nowrap  border p-2"
 										orientation="both"
 									>
-										<Table.Root class="text-xs text-slate-500">
+										<Table.Root class="text-xs text-slate-500" id="table-data">
 											<Table.Header class="border">
 												<Table.Row>
 													{#each $table_headers as header}

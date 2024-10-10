@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { format } from 'sql-formatter';
 
 export const formSchema = z.object({
 	env: z.enum(['', 'Test', 'Dev', 'Prod']).default('Test'),

@@ -1,6 +1,7 @@
 import { TableColumnsInfo } from '$lib/schema';
 import { writable } from 'svelte/store';
 import { invoke } from '@tauri-apps/api';
+import { format } from 'sql-formatter';
 
 export let table_list = writable<TableColumnsInfo[]>([]);
 export let table_headers = writable<string[]>([]);
@@ -14,6 +15,7 @@ export const fetch_table_list = async () => {
 };
 
 export const set_table_selected = (table: TableColumnsInfo) => {
+	table.query_sql = format(table.query_sql);
 	table_selected.set(table);
 };
 
