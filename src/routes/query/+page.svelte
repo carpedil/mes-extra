@@ -250,7 +250,7 @@
 										class="h-[55vh] w-[72vw] flex-1 overflow-x-auto whitespace-nowrap  border p-2"
 										orientation="both"
 									>
-										<Table.Root class="text-xs text-slate-500" id="table-data">
+										<!-- <Table.Root class="text-xs text-slate-500" id="table-data">
 											<Table.Header class="border">
 												<Table.Row>
 													{#each $table_headers as header}
@@ -267,7 +267,25 @@
 													</Table.Row>
 												{/each}
 											</Table.Body>
-										</Table.Root>
+										</Table.Root> -->
+										<table>
+											<thead>
+												<tr class="sticky top-0 z-10 bg-white">
+													{#each $table_headers as header}
+														<td class="border-2 text-nowrap p-2">{header}</td>
+													{/each}
+												</tr>
+											</thead>
+											<tbody>
+												{#each $table_values as item}
+													<tr>
+														{#each item as value}
+															<td class="border font-medium p-1">{value}</td>
+														{/each}
+													</tr>
+												{/each}
+											</tbody>
+										</table>
 									</ScrollArea>
 								</Resizable.Pane>
 							</Resizable.PaneGroup>

@@ -165,7 +165,7 @@
 		{/if}
 	</form>
 	<div class="w-[88.5vw] h-[80vh] overflow-auto text-nowrap">
-		<Table.Root class="text-xs text-slate-500" id="flow-export-table">
+		<!-- <Table.Root class="text-xs text-slate-500" id="flow-export-table">
 			<Table.Header class="border">
 				<Table.Row>
 					{#each $flow_export_table_headers as header}
@@ -182,6 +182,24 @@
 					</Table.Row>
 				{/each}
 			</Table.Body>
-		</Table.Root>
+		</Table.Root> -->
+		<table>
+			<thead>
+				<tr class="sticky top-0 z-10 bg-white">
+					{#each $flow_export_table_headers as header}
+						<td class="border-2 text-nowrap p-2">{header}</td>
+					{/each}
+				</tr>
+			</thead>
+			<tbody>
+				{#each $flow_export_table_values as item}
+					<tr>
+						{#each item as value}
+							<td class="border font-medium p-1">{value}</td>
+						{/each}
+					</tr>
+				{/each}
+			</tbody>
+		</table>
 	</div>
 </div>
